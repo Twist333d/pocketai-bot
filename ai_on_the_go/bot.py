@@ -1,13 +1,20 @@
 import os
 import asyncio
+import logging
+from fastapi.logger import  logger as fastapi_logger
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from telegram import Bot, Update, MessageEntity
 
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Setup basic config for logging
+logging.basicConfig(level=logging.DEBUG)
+fastapi_logger.addHandler(logging.StreamHandler())
+fastapi_logger.setLevel(logging.DEBUG)
 
 # Retrieve your bot token and initialize your bot
 BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
@@ -17,15 +24,19 @@ bot = Bot(token=BOT_TOKEN)
 # Define the command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Send welcome message
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Hello! Welcome to my first bot!")
+    # Try
+    try:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Hello! Welcome to my first bot!")
 
-    # Follow up with a question
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Which model would you like to use?"
-    )
+        # Follow up with a question
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Which model would you like to use?"
+        )
+    except Exception as e:
+        fastapi_logger.error(f"Failed to send message: {e}", exc_info=True)
 
 
 # Create an application for the bot with the command handler for '/start'
@@ -38,12 +49,18 @@ application.add_handler(start_handler)
 @app.post('/webhook')
 async def process_update(request: Request) -> Response:
     update_data = await request.json()
+    fastapi_logger.debug(f"Received update: {update_data}") # Log the incoming update
     update = Update.de_json(update_data, bot)
 
     # Update the update queue of the application
-    await application.update_queue.put(update)
-
-    return Response(status_code=200)
+    # Try to process update:
+    try:
+        await application.update_queue.put(update)
+        return Response(status_code=200)
+    except Exception as e:
+        error_msg = f"Failed to send message: {e}"
+        fastapi_logger.error(error_msg, exc_info=True)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 # Set up your webhook URL like https://yourdomain.com/webhook in your application settings
 def set_webhook():
