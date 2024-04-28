@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Request, Response
 from telegram import Bot, Update, MessageEntity
 from credentials import bot_token
@@ -34,3 +36,15 @@ async def process_update(request: Request) -> Response:
     return Response(status_code=200)
 
 # Set up your webhook URL like https://yourdomain.com/webhook in your application settings
+def set_webook():
+    webhook_url =f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+    bot.set_webhook(url=webhook_url)
+    print(f"Webhook url set to {webhook_url}")
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "set_webhook":
+        set_webook()
+    else:
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
