@@ -3,7 +3,6 @@ import asyncio
 
 from fastapi import FastAPI, Request, Response
 from telegram import Bot, Update, MessageEntity
-from credentials import bot_token
 
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -11,7 +10,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 app = FastAPI()
 
 # Retrieve your bot token and initialize your bot
-BOT_TOKEN = bot_token
+BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
 bot = Bot(token=BOT_TOKEN)
 
 
