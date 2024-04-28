@@ -23,18 +23,21 @@ bot = Bot(token=BOT_TOKEN)
 
 # Define the command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Send welcome message
-    # Try
+    fastapi_logger.debug("/Start command triggered")
+
+    # Try to send a welcome message
     try:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Hello! Welcome to my first bot!")
+        fastapi_logger.debug("Welcome message sent") # confirm message
 
         # Follow up with a question
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Which model would you like to use?"
         )
+        fastapi_logger.debug("Model choice question sent")
     except Exception as e:
         fastapi_logger.error(f"Failed to send message: {e}", exc_info=True)
 
