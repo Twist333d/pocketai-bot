@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from fastapi import FastAPI, Request, Response
 from telegram import Bot, Update, MessageEntity
@@ -36,15 +37,19 @@ async def process_update(request: Request) -> Response:
     return Response(status_code=200)
 
 # Set up your webhook URL like https://yourdomain.com/webhook in your application settings
-def set_webook():
+def set_webhook():
     webhook_url =f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-    bot.set_webhook(url=webhook_url)
+
+    # Create an event loop and run the coroutine for setting the webhook
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(bot.set_webhook(webhook_url))
     print(f"Webhook url set to {webhook_url}")
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "set_webhook":
-        set_webook()
+        set_webhook()
     else:
         import uvicorn
         uvicorn.run(app, host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
+
