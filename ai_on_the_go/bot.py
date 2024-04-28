@@ -16,12 +16,22 @@ bot = Bot(token=BOT_TOKEN)
 
 # Define the command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Hello! Welcome to your bot.")
+    # Send welcome message
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Hello! Welcome to my first bot!")
+
+    # Follow up with a question
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Which model would you like to use?"
+    )
 
 
 # Create an application for the bot with the command handler for '/start'
 application = Application.builder().token(BOT_TOKEN).build()
-application.add_handler(CommandHandler("start", start))
+start_handler = CommandHandler('start', start)
+application.add_handler(start_handler)
 
 
 # FastAPI endpoint to receive updates via webhook
