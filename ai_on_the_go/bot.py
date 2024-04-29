@@ -21,7 +21,7 @@ bot = Bot(token=BOT_TOKEN)
 application = Application.builder().token(BOT_TOKEN).build()
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Initialize Groq client
