@@ -1,84 +1,98 @@
+from fastapi import FastAPI, Request, Response, HTTPException
+from telegram import Bot, Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+import logging
 import os
 import asyncio
-import logging
-from fastapi.logger import  logger as fastapi_logger
+from groq import AsyncGroq
 
-from fastapi import FastAPI, Request, Response, HTTPException
-from telegram import Bot, Update, MessageEntity
-
-from telegram.ext import Application, CommandHandler, ContextTypes
-
-# Initialize FastAPI app
+# initialize FastAPI
 app = FastAPI()
 
-# Setup basic config for logging
-logging.basicConfig(level=logging.DEBUG)
-fastapi_logger.addHandler(logging.StreamHandler())
-fastapi_logger.setLevel(logging.DEBUG)
+# Get all the API keys:
+GROQ_API_KEY = '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'
+BOT_TOKEN = '7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64'
 
-# Retrieve your bot token and initialize your bot
-BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
+# Heroku App name
+HEROKU_APP_NAME = 'ai-on-the-go'
+
+# Telegram bot setup
 bot = Bot(token=BOT_TOKEN)
-
-
-# Define the command handler function
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    fastapi_logger.debug("/Start command triggered")
-
-    # Try to send a welcome message
-    try:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Hello! Welcome to my first bot!")
-        fastapi_logger.debug("Welcome message sent") # confirm message
-
-        # Follow up with a question
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Which model would you like to use?"
-        )
-        fastapi_logger.debug("Model choice question sent")
-    except Exception as e:
-        fastapi_logger.error(f"Failed to send message: {e}", exc_info=True)
-
-
-# Create an application for the bot with the command handler for '/start'
 application = Application.builder().token(BOT_TOKEN).build()
-start_handler = CommandHandler('start', start)
-application.add_handler(start_handler)
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# FastAPI endpoint to receive updates via webhook
-@app.post('/webhook')
-async def process_update(request: Request) -> Response:
-    update_data = await request.json()
-    fastapi_logger.debug(f"Received update: {update_data}") # Log the incoming update
-    update = Update.de_json(update_data, bot)
+# Initialize Groq client
+groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 
-    # Update the update queue of the application
-    # Try to process update:
+@app.on_event("startup")
+async def startup():
+    global application
+    # Build application object
+    application = Application.builder().token(BOT_TOKEN).build()
+    # Initialize the application
+    await application.initialize()
+
+    webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+    await bot.set_webhook(url=webhook_url)
+    logger.info("Webhook setup complete at %s", webhook_url)
+
+# Command handler for /start
+async def start(update:Update, context):
+    logger.debug("Received /start command from user %s", update.effective_chat.id)
     try:
-        await application.update_queue.put(update)
-        return Response(status_code=200)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Hello! Welcome to AI On The Go Bot! Send any message to start AI-On The Go Bot."
+        )
     except Exception as e:
-        error_msg = f"Failed to send message: {e}"
-        fastapi_logger.error(error_msg, exc_info=True)
-        raise HTTPException(status_code=500, detail=error_msg)
+        logger.error("Failed to send start message due to: %s", str(e))
+        raise e
 
-# Set up your webhook URL like https://yourdomain.com/webhook in your application settings
-def set_webhook():
-    webhook_url =f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+# Message handler
 
-    # Create an event loop and run the coroutine for setting the webhook
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(bot.set_webhook(webhook_url))
-    print(f"Webhook url set to {webhook_url}")
+async def query_groq_api(message):
+    try:
+        response = await groq_client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": message}
+            ],
+            model="llama3-70b-8192",  # Choose the model as per your requirement
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error("Failed to query groq api due to: %s", str(e))
+        raise e
 
+async def handle_message(update:Update, context):
+    user_text = update.message.text # extract text from the user message
+    logger.debug("Received message from user %s: %s", update.effective_chat.id, user_text)
+
+    try:
+        chat_response = await query_groq_api(user_text)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
+        logger.debug("Sent response to user %s: %s", update.effective_chat.id, chat_response)
+    except Exception as e:
+        logger.error("Error during message handling: %s", str(e))
+        raise e
+
+
+# Add handlers to the application
+application.add_handler(CommandHandler('start', start))
+application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+
+# Setup the webhook
+@app.post('/webhook')
+async def webhook(request: Request):
+    data = await request.json()
+    update = Update.de_json(data, bot)
+    await application.process_update(update)
+    return Response(status_code=200)
+
+
+# Run the app using Uvicorn, if the script is run directly
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "set_webhook":
-        set_webhook()
-    else:
-        import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
-
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=5000)
