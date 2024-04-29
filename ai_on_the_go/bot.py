@@ -54,6 +54,7 @@ async def start(update:Update, context):
 # Message handler
 
 async def query_groq_api(message):
+    logger.debug(f"Sending to Groq API: {message}")
     try:
         response = await groq_client.chat.completions.create(
             messages=[
@@ -61,9 +62,10 @@ async def query_groq_api(message):
             ],
             model="llama3-70b-8192",  # Choose the model as per your requirement
         )
+        logger.debug(f"Received from Groq API")
         return response.choices[0].message.content
     except Exception as e:
-        logger.error("Failed to query groq api due to: %s", str(e))
+        logger.error(f"Groq API error: {e}")
         raise e
 
 async def handle_message(update:Update, context):
@@ -87,6 +89,7 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 @app.post('/webhook')
 async def webhook(request: Request):
     data = await request.json()
+    logger.debug(f"Received webhook data: {data}")
     update = Update.de_json(data, bot)
     await application.process_update(update)
     return Response(status_code=200)
