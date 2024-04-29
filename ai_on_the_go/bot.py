@@ -29,9 +29,9 @@ groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 
 @app.on_event("startup")
 async def startup():
-    global application
+    #global application
     # Build application object
-    application = Application.builder().token(BOT_TOKEN).build()
+    #application = Application.builder().token(BOT_TOKEN).build()
     # Initialize the application
     await application.initialize()
 
