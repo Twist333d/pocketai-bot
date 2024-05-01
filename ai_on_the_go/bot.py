@@ -141,7 +141,6 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 @app.post('/webhook')
 async def webhook(request: Request):
     try:
-
         data = await request.json()
         logger.debug(f"Received webhook data: {data}")
         update = Update.de_json(data, bot)
@@ -151,6 +150,7 @@ async def webhook(request: Request):
         return Response(status_code=200)
     except Exception as e:
         # log the error and send it back in the response for the debugging
+        logger.error(f"Failed to process update: {str(e)}", exc_info=True)
         return JSONResponse(status_code=500, content={"message": "Bad Request: Invalid data", "error": str(e)})
 
 
