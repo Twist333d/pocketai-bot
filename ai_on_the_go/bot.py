@@ -17,6 +17,7 @@ from langchain_groq import ChatGroq
 
 # Fast API
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 
 # initialize FastAPI
 app = FastAPI()
@@ -91,7 +92,7 @@ async def start(update:Update, context):
 
 
 # setup the conversation in Langchain
-async def setup_llm_converation(llm):
+async def setup_llm_conversation(llm):
     """
     Sets the conversation class from langchain.
     :param llm: llm class from langchain
@@ -120,7 +121,7 @@ async def handle_message(update:Update, context):
 
     # check if user has a conversation
     if conversations[user_id] is None:
-        conversations[user_id] = await setup_llm_converation(llm)
+        conversations[user_id] = await setup_llm_conversation(llm)
 
 
     try:
@@ -139,11 +140,18 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 # Setup the webhook
 @app.post('/webhook')
 async def webhook(request: Request):
-    data = await request.json()
-    logger.debug(f"Received webhook data: {data}")
-    update = Update.de_json(data, bot)
-    await application.process_update(update)
-    return Response(status_code=200)
+    try:
+
+        data = await request.json()
+        logger.debug(f"Received webhook data: {data}")
+        update = Update.de_json(data, bot)
+
+        # if de_json doesn't raise an error, we assume it's a valid TG object
+        await application.process_update(update)
+        return Response(status_code=200)
+    except Exception as e:
+        # log the error and send it back in the response for the debugging
+        return JSONResponse(status_code=500, content={"message": "Bad Request: Invalid data", "error": str(e)})
 
 
 # Run the app using Uvicorn, if the script is run directly
