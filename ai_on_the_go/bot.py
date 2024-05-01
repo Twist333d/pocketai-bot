@@ -1,12 +1,22 @@
-from fastapi import FastAPI, Request, Response, HTTPException
+# Telegram
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
+
+# utils
 import logging
 import os
+
+# General
+from contextlib import asynccontextmanager
+from collections import defaultdict
+
+# Langchain
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain_groq import ChatGroq
-from collections import defaultdict
+
+# Fast API
+from fastapi import FastAPI, Request, Response
 
 # initialize FastAPI
 app = FastAPI()
@@ -34,6 +44,29 @@ llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY, model_name='llama3-70
 # Dictionary to manage conversation for each user
 conversations = defaultdict(lambda: None)
 
+# Let's replace on_event with lifespan
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Defining lifespan context manager that will:
+    - executes code before application accepts any requests
+    - executes code after application has finished accepting any requests
+    Use case: Loads the resources only before they are needed
+    :param app:
+    :return:
+    """
+    # initialize the application
+    await application.initialize()
+
+    # setup the webhook
+    webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+    await bot.set_webhook(url=webhook_url)
+    logger.info("Webhook setup complete at %s", webhook_url)
+
+    # after application is closed
+    #yield
+
+""" 
 @app.on_event("startup")
 async def startup():
     # Initialize the application
@@ -42,6 +75,7 @@ async def startup():
     webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
     await bot.set_webhook(url=webhook_url)
     logger.info("Webhook setup complete at %s", webhook_url)
+"""
 
 # Command handler for /start
 async def start(update:Update, context):
