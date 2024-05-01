@@ -6,13 +6,15 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 import os
 
+# other modules
+from ai_on_the_go.webhook_utils import write_last_webhook_url, read_last_webhook_url
+from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
+
 # General
 from contextlib import asynccontextmanager
 from collections import defaultdict
 
 # Langchain
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
 from langchain_groq import ChatGroq
 
 # Fast API
@@ -26,9 +28,6 @@ app = FastAPI()
 GROQ_API_KEY = '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'
 BOT_TOKEN = '7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64'
 
-# Heroku App name
-HEROKU_APP_NAME = 'ai-on-the-go'
-
 # Telegram bot setup
 bot = Bot(token=BOT_TOKEN)
 application = Application.builder().token(BOT_TOKEN).build()
@@ -37,13 +36,23 @@ application = Application.builder().token(BOT_TOKEN).build()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Initialize Groq client
-#groq_client = AsyncGroq(api_key=GROQ_API_KEY)
-# Setup the client
+# Configure langchain groq client
 llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY, model_name='llama3-70b-8192')
 
 # Dictionary to manage conversation for each user
-conversations = defaultdict(lambda: None)
+conversations = defaultdict(lambda: None)#
+
+# check, if webhook is valid
+async def check_and_update_webhook():
+    desired_webhook_url = os.getenv("WEBHOOK_URL", "https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook")
+    last_webhook_url = read_last_webhook_url()
+
+    if last_webhook_url != desired_webhook_url:
+        await bot.set_webhook(url=desired_webhook_url)
+        write_last_webhook_url(desired_webhook_url)
+        print("Webhook set successfully to", desired_webhook_url)
+    else:
+        print("Webhook already set to the correct URL, no update needed.")
 
 # Let's replace on_event with lifespan
 @asynccontextmanager
@@ -57,25 +66,31 @@ async def lifespan(app: FastAPI):
     :return:
     """
     # initialize the application
-    await application.initialize()
-
-    # setup the webhook
-    webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-    await bot.set_webhook(url=webhook_url)
-    logger.info("Webhook setup complete at %s", webhook_url)
-
-    # after application is closed
-    #yield
-
-""" 
+    logger.debug("Starting application initialization.")
+    try:
+        # await Application.initialize() - no longer needed
+        # setup the webhook
+        # Optionally check an environment variable to conditionally set the webhook
+        if os.getenv("SET_WEBHOOK", "false").lower() in ['true', '1', 't']:
+            await check_and_update_webhook()
+        #webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+        #await bot.set_webhook(url=webhook_url)
+        logger.info("Webhook setup complete.")
+    except Exception as e:
+        print(f"Error during application initialization: {e}")
+"""
 @app.on_event("startup")
 async def startup():
-    # Initialize the application
-    await application.initialize()
-
-    webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-    await bot.set_webhook(url=webhook_url)
-    logger.info("Webhook setup complete at %s", webhook_url)
+    # initialize the application
+    logger.debug("Starting application initialization.")
+    try:
+        await Application.initialize()
+        # setup the webhook
+        webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+        await bot.set_webhook(url=webhook_url)
+        logger.info("Webhook setup complete at %s", webhook_url)
+    except Exception as e:
+        print(f"Error during application initialization: {e}")
 """
 
 # Command handler for /start
@@ -90,28 +105,6 @@ async def start(update:Update, context):
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
 
-
-# setup the conversation in Langchain
-async def setup_llm_conversation(llm):
-    """
-    Sets the conversation class from langchain.
-    :param llm: llm class from langchain
-    :return: conversation class from langchain
-    """
-    conversation = ConversationChain(
-        llm=llm,
-        memory=ConversationBufferMemory(),
-        verbose=False
-    )
-    return conversation
-async def get_llm_response(conversation, user_input):
-    """
-    Gets response from user input from langchain llm.
-    :param user_input: user message extracted from telegram
-    :return: returns a response from llm
-    """
-    response = await conversation.ainvoke(user_input)
-    return response['response']
 
 # Get message from user -> send to Groq API -> send back the response
 async def handle_message(update:Update, context):
@@ -131,7 +124,6 @@ async def handle_message(update:Update, context):
     except Exception as e:
         logger.error("Error during message handling: %s", str(e))
         raise e
-
 
 # Add handlers to the application
 application.add_handler(CommandHandler('start', start))
