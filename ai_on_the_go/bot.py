@@ -86,7 +86,7 @@ async def startup():
     # initialize the application
     logger.debug("Starting application initialization.")
     try:
-        await Application.initialize()
+        await application.initialize()
         if os.getenv("SET_WEBHOOK", "false").lower() in ['true', '1', 't']:
             await check_and_update_webhook()
             logger.info("Webhook setup complete.")
