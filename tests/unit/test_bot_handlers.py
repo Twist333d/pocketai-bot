@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import defaultdict
 
 # import start function
-from ai_on_the_go.bot import start, handle_message, application, get_llm_response, webhook
+from ai_on_the_go.bot import start, handle_message, application, get_llm_response, webhook_updates
 
 
 @pytest.mark.asyncio
@@ -97,7 +97,7 @@ async def test_webhook_valid_request():
     })
 
     with patch('ai_on_the_go.bot.application.process_update') as mock_process_update:
-        response = await webhook(request)
+        response = await webhook_updates(request)
         assert response.status_code == 200
         mock_process_update.assert_called_once()
 
@@ -123,7 +123,7 @@ async def test_webhook_with_different_update_types():
     request.json = AsyncMock(return_value=inline_query_data)
 
     with patch('ai_on_the_go.bot.application.process_update') as mock_process_update:
-        response = await webhook(request)
+        response = await webhook_updates(request)
         assert response.status_code == 200
         mock_process_update.assert_called_once()
 

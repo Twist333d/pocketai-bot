@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
     # initialize the application
     logger.debug("Starting application initialization.")
     try:
-        # await Application.initialize() - no longer needed
+        await application.initialize()  # no longer needed
         # setup the webhook
         # Optionally check an environment variable to conditionally set the webhook
         if os.getenv("SET_WEBHOOK", "false").lower() in ['true', '1', 't']:
@@ -131,7 +131,7 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 
 # Setup the webhook
 @app.post('/webhook')
-async def webhook(request: Request):
+async def webhook_updates(request: Request):
     try:
         data = await request.json()
         logger.debug(f"Received webhook data: {data}")
