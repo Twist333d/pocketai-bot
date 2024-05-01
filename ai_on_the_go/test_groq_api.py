@@ -1,26 +1,29 @@
-from groq import AsyncGroq
+from langchain_groq import ChatGroq
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 import logging
+import asyncio
 
 GROQ_API_KEY = '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'
 
-
 # Setup the client
-groq_client = AsyncGroq(api_key=GROQ_API_KEY)
+chat = ChatGroq(temperature=0.0, groq_api_key=GROQ_API_KEY, model_name='llama3-70b-8192')
 
-logger = logging.getLogger(__name__)
+# Initialize an llm
+conversation = ConversationChain(
+    llm=chat,
+    memory=ConversationBufferMemory(),
+    verbose=False,
+)
 
+async def chat_with_llama():
+    while True:
+        user_input = input("Please input your message: ")
+        if user_input == 'quit':
+            print("Good bye!")
+            break
+        else:
+            response = await conversation.ainvoke(user_input)
+            print(response['response'])
 
-# Send responses
-async def query_groq_api(message):
-    try:
-        response = await groq_client.chat.completions.create(
-            messages=[
-                {"role": "user", "content": message}
-            ],
-            model="llama3-70b-8192",  # Choose the model as per your requirement
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        logger.error("Failed to query groq api due to: %s", str(e))
-        raise e
-
+chat_with_llama()

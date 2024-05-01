@@ -4,7 +4,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 import os
 import asyncio
-from groq import AsyncGroq
+#from groq import AsyncGroq
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
+from langchain_groq import ChatGroq
 
 # initialize FastAPI
 app = FastAPI()
@@ -25,15 +28,19 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Initialize Groq client
-groq_client = AsyncGroq(api_key=GROQ_API_KEY)
+#groq_client = AsyncGroq(api_key=GROQ_API_KEY)
+# Setup the client
+llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY, model_name='llama3-70b-8192')
+
+# global variable for conversation
+conversation = None
 
 @app.on_event("startup")
 async def startup():
-    #global application
-    # Build application object
-    #application = Application.builder().token(BOT_TOKEN).build()
     # Initialize the application
     await application.initialize()
+    global conversation
+    conversation = await setup_llm_converation(llm)
 
     webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
     await bot.set_webhook(url=webhook_url)
@@ -51,29 +58,36 @@ async def start(update:Update, context):
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
 
-# Message handler
 
-async def query_groq_api(message):
-    logger.debug(f"Sending to Groq API: {message}")
-    try:
-        response = await groq_client.chat.completions.create(
-            messages=[
-                {"role": "user", "content": message}
-            ],
-            model="llama3-70b-8192",  # Choose the model as per your requirement
-        )
-        logger.debug(f"Received from Groq API")
-        return response.choices[0].message.content
-    except Exception as e:
-        logger.error(f"Groq API error: {e}")
-        raise e
+# setup the conversation in Langchain
+async def setup_llm_converation(llm):
+    """
+    Sets the conversation class from langchain.
+    :param llm: llm class from langchain
+    :return: conversation class from langchain
+    """
+    conversation = ConversationChain(
+        llm=llm,
+        memory=ConversationBufferMemory(),
+        verbose=False
+    )
+    return conversation
+async def get_llm_response(conversation, user_input):
+    """
+    Gets response from user input from langchain llm.
+    :param user_input: user message extracted from telegram
+    :return: returns a response from llm
+    """
+    response = await conversation.ainvoke(user_input)
+    return response['response']
 
+# Get message from user -> send to Groq API -> send back the response
 async def handle_message(update:Update, context):
     user_text = update.message.text # extract text from the user message
     logger.debug("Received message from user %s: %s", update.effective_chat.id, user_text)
 
     try:
-        chat_response = await query_groq_api(user_text)
+        chat_response = await get_llm_response(conversation, user_text)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
         logger.debug("Sent response to user %s: %s", update.effective_chat.id, chat_response)
     except Exception as e:
