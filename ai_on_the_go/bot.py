@@ -3,11 +3,10 @@ from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 import os
-import asyncio
-#from groq import AsyncGroq
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain_groq import ChatGroq
+from collections import defaultdict
 
 # initialize FastAPI
 app = FastAPI()
@@ -32,15 +31,13 @@ logger = logging.getLogger(__name__)
 # Setup the client
 llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY, model_name='llama3-70b-8192')
 
-# global variable for conversation
-conversation = None
+# Dictionary to manage conversation for each user
+conversations = defaultdict(lambda: None)
 
 @app.on_event("startup")
 async def startup():
     # Initialize the application
     await application.initialize()
-    global conversation
-    conversation = await setup_llm_converation(llm)
 
     webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
     await bot.set_webhook(url=webhook_url)
@@ -84,10 +81,16 @@ async def get_llm_response(conversation, user_input):
 # Get message from user -> send to Groq API -> send back the response
 async def handle_message(update:Update, context):
     user_text = update.message.text # extract text from the user message
+    user_id = update.effective_chat.id
     logger.debug("Received message from user %s: %s", update.effective_chat.id, user_text)
 
+    # check if user has a conversation
+    if conversations[user_id] is None:
+        conversations[user_id] = await setup_llm_converation(llm)
+
+
     try:
-        chat_response = await get_llm_response(conversation, user_text)
+        chat_response = await get_llm_response(conversations[user_id], user_text)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
         logger.debug("Sent response to user %s: %s", update.effective_chat.id, chat_response)
     except Exception as e:
