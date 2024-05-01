@@ -55,16 +55,17 @@ async def check_and_update_webhook():
         print("Webhook already set to the correct URL, no update needed.")
 
 # Let's replace on_event with lifespan
+""" 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
+    """ """
     Defining lifespan context manager that will:
     - executes code before application accepts any requests
     - executes code after application has finished accepting any requests
     Use case: Loads the resources only before they are needed
     :param app:
     :return:
-    """
+    """  """
     # initialize the application
     logger.debug("Starting application initialization.")
     try:
@@ -79,19 +80,25 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Error during application initialization: {e}")
 """
+
 @app.on_event("startup")
 async def startup():
     # initialize the application
     logger.debug("Starting application initialization.")
     try:
         await Application.initialize()
-        # setup the webhook
-        webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-        await bot.set_webhook(url=webhook_url)
-        logger.info("Webhook setup complete at %s", webhook_url)
+        if os.getenv("SET_WEBHOOK", "false").lower() in ['true', '1', 't']:
+            await check_and_update_webhook()
+            logger.info("Webhook setup complete.")
     except Exception as e:
         print(f"Error during application initialization: {e}")
-"""
+
+        # setup the webhook
+        #webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
+        #await bot.set_webhook(url=webhook_url)
+        #logger.info("Webhook setup complete at %s", webhook_url)
+
+
 
 # Command handler for /start
 async def start(update:Update, context):
