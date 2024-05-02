@@ -7,8 +7,8 @@ import logging
 import os
 
 # other modules
-from ai_on_the_go.webhook_utils import write_last_webhook_url, read_last_webhook_url
-from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
+from webhook_utils import write_last_webhook_url, read_last_webhook_url
+from llm_integration import get_llm_response, setup_llm_conversation
 
 # General
 from contextlib import asynccontextmanager
