@@ -44,7 +44,7 @@ conversations = defaultdict(lambda: None)#
 
 # check, if webhook is valid
 async def check_and_update_webhook():
-    desired_webhook_url = os.getenv("WEBHOOK_URL", "https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook")
+    desired_webhook_url = os.getenv("WEBHOOK_URL", "https://pocketai-prod-64cf99db36a4.herokuapp.com/webhook")
     last_webhook_url = read_last_webhook_url()
 
     if last_webhook_url != desired_webhook_url:
