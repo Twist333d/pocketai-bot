@@ -17,7 +17,7 @@ from collections import defaultdict
 from langchain_groq import ChatGroq
 
 # Fast API
-from fasctapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 # initialize FastAPI

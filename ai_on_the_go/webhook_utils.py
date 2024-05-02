@@ -1,4 +1,3 @@
-import os
 import logging
 
 webhook_url_file = "webhook_url.txt"  # File to store the last set webhook URL

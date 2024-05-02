@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import defaultdict
 
 # import start function
-from ai_on_the_go.bot import start, handle_message, application, get_llm_response, webhook_updates
+from ai_on_the_go.bot import start, handle_message, webhook_updates
 
 
 @pytest.mark.asyncio

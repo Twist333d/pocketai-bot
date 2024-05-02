@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 from ai_on_the_go.bot import app  # Ensure this import points to where your FastAPI app is defined
 
 

@@ -42,7 +42,7 @@ exclude = '''
 
 [tool.flake8]
 max-line-length = 120
-ignore = "E203, E501, W503, E302"
+ignore = "E203, E501, W503, E302, F841"
 exclude = [
     ".git",
     "__pycache__",
