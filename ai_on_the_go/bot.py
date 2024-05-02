@@ -20,6 +20,7 @@ from langchain_groq import ChatGroq
 # Fast API
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 # initialize FastAPI
 app = FastAPI()
