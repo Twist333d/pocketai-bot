@@ -4,10 +4,12 @@ from datetime import datetime
 from unittest.mock import patch, AsyncMock
 from ai_on_the_go.bot import app  # Ensure this import points to where your FastAPI app is defined
 
+
 # Setup TestClient for FastAPI
 @pytest.fixture
 def client():
     return TestClient(app)
+
 
 """
 def test_message_interaction_integration(client):
@@ -29,9 +31,10 @@ def test_message_interaction_integration(client):
         mock_llm.assert_called_once()
 """
 
+
 def test_error_handling_integration(client):
     malformed_data = {"random": "data"}
-    with patch('telegram.Bot.send_message') as mock_send:
+    with patch("telegram.Bot.send_message") as mock_send:
         response = client.post("/webhook", json=malformed_data)
         assert response.status_code == 500
         content = response.json()

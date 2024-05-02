@@ -4,6 +4,7 @@ import logging
 webhook_url_file = "webhook_url.txt"  # File to store the last set webhook URL
 logger = logging.getLogger(__name__)
 
+
 def read_last_webhook_url():
     try:
         with open(webhook_url_file, "r") as file:
@@ -14,6 +15,7 @@ def read_last_webhook_url():
     except Exception as e:
         logger.error(f"Unexpected error reading webhook URL file: {e}")
         return None
+
 
 def write_last_webhook_url(url):
     try:
