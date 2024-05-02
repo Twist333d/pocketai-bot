@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 
 # initialize FastAPI
 app = FastAPI()
+# lets add another line just for testing
 
 # Get all the API keys:
 GROQ_API_KEY = "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"
