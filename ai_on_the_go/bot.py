@@ -11,14 +11,13 @@ from ai_on_the_go.webhook_utils import write_last_webhook_url, read_last_webhook
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
 
 # General
-from contextlib import asynccontextmanager
 from collections import defaultdict
 
 # Langchain
 from langchain_groq import ChatGroq
 
 # Fast API
-from fastapi import FastAPI, Request, Response
+from fasctapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 # initialize FastAPI
@@ -57,7 +56,7 @@ async def check_and_update_webhook():
 
 
 # Let's replace on_event with lifespan
-""" 
+"""
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """ """
