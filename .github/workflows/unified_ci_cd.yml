@@ -47,8 +47,7 @@ jobs:
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
         with:
-          soft_fail: true  # The scan will not fail the workflow but will output the number of incidents
-          ignore_known_secrets: true # Ignore secrets which are already known
+          args: -v --ignore-known-secrets --soft_fail
       - name: Check scan result
         if: steps.ggshield.outputs.policy_break_count != '0'
         run: |
