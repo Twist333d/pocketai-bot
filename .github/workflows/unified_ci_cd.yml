@@ -47,7 +47,7 @@ jobs:
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
         with:
-          args: -v --ignore-known-secrets --soft_fail
+          args: --ignore-known-secrets
       - name: Check scan result
         if: steps.ggshield.outputs.policy_break_count != '0'
         run: |
