@@ -71,7 +71,7 @@ jobs:
   deploy:
     name: Deploy to Heroku
     needs: [build-and-test, gitguardian-scan]
-    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' && steps.gitguardian-scan.outputs.policy_break_count_critical == '0'
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' && steps.ggshield.outputs.policy_break_count_critical == '0'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Heroku
