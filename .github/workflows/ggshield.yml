@@ -29,15 +29,14 @@ jobs:
             exit 1
           else
             echo "Non-critical issues detected. Please review the report."
-          fi
 
-      - name: Notify on secrets detection
+      - name: Notify on Slack # Use this section for Slack notifications
+        id: slack
         if: steps.ggshield.outputs.policy_break_count != '0' && steps.ggshield.outputs.policy_break_count_critical == '0'
-        uses: some/notification-action@v1
+        uses: slackapi/slack-github-action@v1.26.0 # slack action
         with:
-          message: "Non-critical secrets or sensitive data might have been detected in your push. Please review."
-          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          channel-id: ''
+          slack-message: "Non-critical secrets or sensitive data might have been detected in your push. Please review."
+        env: SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
-      - name: Proceed with other tasks
-        run: |
-          echo "Continue with other pipeline tasks..."
+        
