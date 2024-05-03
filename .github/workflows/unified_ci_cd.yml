@@ -64,7 +64,7 @@ jobs:
         with:
           channel-id: 'C071TGA9KJ9'
           slack-message: "Non-critical secrets or sensitive data might have been detected in your push. Please review."
-        env: 
+        env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   deploy:
@@ -73,9 +73,10 @@ jobs:
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Deploy to Heroku
         if: needs.gitguardian-scan.outputs.policy_break_count_critical == '0'
-        uses: akhileshns/heroku-deploy@v3.12.12
+      - uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
