@@ -35,8 +35,8 @@ BOT_TOKEN = os.getenv("PROD_BOT_TOKEN")
 print(f"BOT token set: {BOT_TOKEN}")
 WEBHOOK_URL = os.getenv("PROD_WEBHOOK_URL")
 print(f"WEBHOOK_URL set: {WEBHOOK_URL}")
-#GROQ_API_KEY = "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"
-#BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
+# GROQ_API_KEY = "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"
+# BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
 
 # Telegram bot setup
 bot = Bot(token=BOT_TOKEN)
