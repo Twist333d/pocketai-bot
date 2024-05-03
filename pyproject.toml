@@ -23,6 +23,7 @@ flake8 = "^7.0.0"
 black = "^24.4.2"
 autopep8 = "^2.1.0"
 flake8-pyproject = "^1.2.3"
+python-dotenv = "^1.0.1"
 
 [tool.black]
 line-length = 120  # Extends the default line length for better readability on modern displays
