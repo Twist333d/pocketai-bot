@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 # utils
 import logging
 import os
+from dotenv import load_dotenv
 
 # other modules
 from ai_on_the_go.webhook_utils import write_last_webhook_url, read_last_webhook_url
@@ -24,9 +25,18 @@ from fastapi.responses import JSONResponse
 app = FastAPI()
 # lets add another line just for testing
 
-# Get all the API keys:
-GROQ_API_KEY = "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"
-BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
+# Access env variables
+load_dotenv()
+
+# Access variables
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+print(f"GROQ key set: {GROQ_API_KEY}")
+BOT_TOKEN = os.getenv("PROD_BOT_TOKEN")
+print(f"BOT token set: {BOT_TOKEN}")
+WEBHOOK_URL = os.getenv("PROD_WEBHOOK_URL")
+print(f"WEBHOOK_URL set: {WEBHOOK_URL}")
+#GROQ_API_KEY = "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"
+#BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
 
 # Telegram bot setup
 bot = Bot(token=BOT_TOKEN)
@@ -48,9 +58,7 @@ conversations = defaultdict(lambda: None)  #
 
 # check, if webhook is valid
 async def check_and_update_webhook():
-    desired_webhook_url = os.getenv(
-        "WEBHOOK_URL",
-        "https://pocketai-prod-64cf99db36a4.herokuapp.com/webhook")
+    desired_webhook_url = WEBHOOK_URL
     last_webhook_url = read_last_webhook_url()
 
     if last_webhook_url != desired_webhook_url:
