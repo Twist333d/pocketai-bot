@@ -2,7 +2,9 @@
 
 ## Overview
 
-AI on the Go is a sophisticated Telegram bot designed to enhance user interaction through advanced AI capabilities. It integrates seamlessly with LangChain for nuanced language processing and is deployable on platforms like Heroku for easy access and scalability.
+PocketAI is a sophisticated Telegram bot designed to enhance user interaction through advanced AI capabilities. 
+It integrates seamlessly with LangChain for nuanced language processing and is deployable on platforms like Heroku 
+for easy access and scalability.
 
 ## Features
 
@@ -28,4 +30,9 @@ cd ai-on-the-go
 ```
 
 Install dependencies using Poetry:
+```bash
 poetry install
+```
+## Usage
+Run the bot locally using poetry run python ai_on_the_go/bot.py
+
