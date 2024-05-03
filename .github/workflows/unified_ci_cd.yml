@@ -73,13 +73,12 @@ jobs:
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Git checkout
+      - name: Checkout repository
         uses: actions/checkout@v2
       - name: Deploy to Heroku
         if: needs.gitguardian-scan.outputs.policy_break_count_critical == '0'
-      - uses: akhileshns/heroku-deploy@v3.12.12
+        uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
+          heroku_app_name: ${{ github.ref == 'refs/heads/develop' ? 'pocketai-staging' : 'pocketai-prod' }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
-
