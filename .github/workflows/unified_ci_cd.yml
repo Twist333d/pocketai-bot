@@ -73,7 +73,8 @@ jobs:
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Git checkout
+        uses: actions/checkout@v2
       - name: Deploy to Heroku
         if: needs.gitguardian-scan.outputs.policy_break_count_critical == '0'
       - uses: akhileshns/heroku-deploy@v3.12.12
