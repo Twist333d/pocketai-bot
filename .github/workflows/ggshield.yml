@@ -1,0 +1,43 @@
+name: GitGuardian scan
+
+on: [push, pull_request]
+
+jobs:
+  scanning:
+    name: GitGuardian scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all history so multiple commits can be scanned
+
+      - name: GitGuardian scan
+        id: ggshield
+        uses: GitGuardian/ggshield-action@v1.27.0
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+        with:
+          soft_fail: true  # The scan will not fail the workflow but will output the number of incidents
+
+      - name: Check scan result
+        if: steps.ggshield.outputs.policy_break_count != '0'
+        run: |
+          echo "Policy breaks detected: ${{ steps.ggshield.outputs.policy_break_count }}"
+          if [ "${{ steps.ggshield.outputs.policy_break_count_critical }}" != "0" ]; then
+            echo "Critical policy breaks detected."
+            exit 1
+          else
+            echo "Non-critical issues detected. Please review the report."
+          fi
+
+      - name: Notify on secrets detection
+        if: steps.ggshield.outputs.policy_break_count != '0' && steps.ggshield.outputs.policy_break_count_critical == '0'
+        uses: some/notification-action@v1
+        with:
+          message: "Non-critical secrets or sensitive data might have been detected in your push. Please review."
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+
+      - name: Proceed with other tasks
+        run: |
+          echo "Continue with other pipeline tasks..."
