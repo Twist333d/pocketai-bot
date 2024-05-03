@@ -69,7 +69,7 @@ jobs:
 
   deploy:
     name: Deploy to Heroku
-    needs: [build-and-test, gitguardian-scan]
+    needs: [ build-and-test, gitguardian-scan ]
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -80,5 +80,5 @@ jobs:
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: { ${{ github.ref == 'refs/heads/develop' ? 'pocketai-staging': 'pocketai-prod' }} }
+          heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
