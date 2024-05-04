@@ -1,6 +1,6 @@
 # Telegram
 from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ApplicationBuilder, ContextTypes
 
 # utils
 import logging
@@ -26,7 +26,8 @@ PORT = 5000
 
 # initialize FastAPI
 app = FastAPI()
-# let's add another line just for testing
+bot = None
+application = None
 
 # Access env variables
 load_dotenv()
@@ -40,17 +41,13 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-# Telegram bot setup
-bot = Bot(token=BOT_TOKEN)
-application = Application.builder().token(BOT_TOKEN).build()
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 # Set lower verbosity for httpx and telegram
 # logging.getLogger('httpx').setLevel(logging.WARNING)
 # logging.getLogger('telegram').setLevel(logging.WARNING)
 # logging.getLogger('httpcore').setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
 
 # Configure langchain groq client
 llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY,
@@ -60,14 +57,15 @@ llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY,
 conversations = defaultdict(lambda: None)  #
 
 
+
 async def check_webhook():
-    current_webhook_info = await bot.getWebhookInfo()
+    current_webhook_info = await bot.get_webhook_info()
     current_webhook_url = current_webhook_info.url
     logger.info(f"Current webhook URL: {current_webhook_url}")
 
     if current_webhook_url != WEBHOOK_URL:
         try:
-            await bot.setWebhook(WEBHOOK_URL)
+            await bot.set_webhook(WEBHOOK_URL)
             logger.info("Webhook successfully updated")
         except Exception as e:
             logger.info(f"Webhook update failed: {e}")
@@ -75,26 +73,8 @@ async def check_webhook():
         logger.info("Webhook already set, no update needed.")
 
 
-@app.on_event("startup")
-async def startup():
-    # initialize the application
-    logger.debug("*** APPLICATION INITIALIZATION ***.")
-    try:
-        await application.initialize()
-        logger.debug("*** CHECKING WEBHOOK SETUP ***")
-        await check_webhook()
-
-        # Add handlers after initialization is confirmed
-        application.add_handler(CommandHandler("start", command_start))
-        application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-        logger.debug("Handlers successfully added")
-
-    except Exception as e:
-        logger.error(f"Error during application initialization: {e}")
-
-
 # Command handler for /start
-async def command_start(update: Update, context):
+async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
     logger.info("Start command received")
 
@@ -110,7 +90,7 @@ async def command_start(update: Update, context):
 
 
 # Get message from user -> send to Groq API -> send back the response
-async def handle_message(update: Update, context):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text  # extract text from the user message
     user_id = update.effective_chat.id
     logger.debug("Received message from user %s: %s",
@@ -151,6 +131,41 @@ async def webhook_updates(request: Request):
         logger.error(f"Failed to process update: {str(e)}", exc_info=True)
         return JSONResponse(status_code=500, content={"message": "Bad Request: Invalid data", "error": str(e)})
 
+
+@app.on_event("startup")
+async def startup():
+    # initialize the application
+    logger.debug("*** APPLICATION INITIALIZATION ***.")
+    try:
+        # Telegram bot setup
+        logger.debug("*** BOT SETUP ***")
+
+        # Create the application
+        global bot
+        global application
+        application = ApplicationBuilder().token(BOT_TOKEN).build()
+        bot = application.bot
+        # initialize
+        await application.initialize()
+        logger.debug(application)
+        logger.debug(f"Bot Token: {bot.token}")
+        logger.debug(f"Bot url: {bot.base_url}") # Async call to get username
+        logger.debug(f"Bot commands: {await bot.get_my_commands()}")
+
+        # Setup webhook
+        logger.debug("*** CHECKING WEBHOOK SETUP ***")
+        await check_webhook()
+
+        # Add handlers after initialization is confirmed
+        application.add_handler(CommandHandler("start", command_start))
+        application.add_handler(MessageHandler(
+            filters.TEXT & (~filters.COMMAND), handle_message))
+        logger.debug("Handlers successfully added")
+
+
+
+    except Exception as e:
+        logger.error(f"Error during application initialization: {e}")
 
 # Run the app using Uvicorn, if the script is run directly
 if __name__ == "__main__":
