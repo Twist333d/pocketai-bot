@@ -1,0 +1,18 @@
+{
+    "update_id": 1,
+    "message": {
+        "message_id": 2, // Increment this if you are simulating a conversation
+        "from": {
+            "id": 149888525, // User's Telegram ID
+            "is_bot": false,
+            "first_name": "Alexander",
+            "username": "alex_z_tg" // Optional, add this if you need to use it in your bot's logic
+        },
+        "chat": {
+            "id": 149888525, // Same as from ID in private chats
+            "type": "private"
+        },
+        "date": 1609459200, // This can be the current UNIX timestamp if relevant
+        "text": "Hello, bot!"
+    }
+}

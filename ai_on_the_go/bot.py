@@ -21,6 +21,9 @@ from langchain_groq import ChatGroq
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
+# Setup the port
+PORT = 5000
+
 # initialize FastAPI
 app = FastAPI()
 # let's add another line just for testing
@@ -43,6 +46,10 @@ application = Application.builder().token(BOT_TOKEN).build()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+# Set lower verbosity for httpx and telegram
+# logging.getLogger('httpx').setLevel(logging.WARNING)
+# logging.getLogger('telegram').setLevel(logging.WARNING)
+# logging.getLogger('httpcore').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Configure langchain groq client
@@ -77,18 +84,25 @@ async def startup():
         logger.debug("*** CHECKING WEBHOOK SETUP ***")
         await check_webhook()
 
+        # Add handlers after initialization is confirmed
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(MessageHandler(
+            filters.TEXT & (~filters.COMMAND), handle_message))
+        logger.debug("Handlers added")
+
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
 
 
 # Command handler for /start
 async def start(update: Update, context):
-    logger.debug("Received /start command from user %s",
-                 update.effective_chat.id)
+    user_chat_id = update.effective_chat.id
+
+    logger.debug(f"Received /start command from user: {user_chat_id}")
     try:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Hello! Welcome to AI On The Go Bot! Send any message to start AI-On The Go Bot.",
+            chat_id=user_chat_id,
+            text="Hello, how can I help you today?",
         )
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
@@ -97,17 +111,17 @@ async def start(update: Update, context):
 
 # Get message from user -> send to Groq API -> send back the response
 async def handle_message(update: Update, context):
-    user_text = update.message.text  # extract text from the user message
+    user_message = update.message.text  # extract text from the user message
     user_id = update.effective_chat.id
     logger.debug("Received message from user %s: %s",
-                 update.effective_chat.id, user_text)
+                 update.effective_chat.id, user_message)
 
     # check if user has a conversation
     if conversations[user_id] is None:
         conversations[user_id] = await setup_llm_conversation(llm)
 
     try:
-        chat_response = await get_llm_response(conversations[user_id], user_text)
+        chat_response = await get_llm_response(conversations[user_id], user_message)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
         logger.debug("Sent response to user %s: %s",
                      update.effective_chat.id, chat_response)
@@ -117,9 +131,8 @@ async def handle_message(update: Update, context):
 
 
 # Add handlers to the application
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(
-    filters.TEXT & (~filters.COMMAND), handle_message))
+# application.add_handler(CommandHandler("start", start))
+# application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
 
 # Setup the webhook
@@ -143,4 +156,4 @@ async def webhook_updates(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
