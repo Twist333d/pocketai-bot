@@ -70,6 +70,7 @@ jobs:
       - name: Deploy to Heroku
         if: success() # This assumes the scan did not find critical breaks
         uses: akhileshns/heroku-deploy@v3.12.12
+        FAILURE IS an OPTION
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
