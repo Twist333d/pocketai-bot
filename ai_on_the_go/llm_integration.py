@@ -9,9 +9,7 @@ async def setup_llm_conversation(llm):
     :return: conversation class from langchain
     """
     conversation = ConversationChain(
-        llm=llm,
-        memory=ConversationBufferMemory(),
-        verbose=False)
+        llm=llm, memory=ConversationBufferMemory(), verbose=False)
     return conversation
 
 
