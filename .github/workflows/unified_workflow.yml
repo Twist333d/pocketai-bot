@@ -25,6 +25,10 @@ jobs:
           poetry install
 
       - name: Run tests
+        env: 
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           poetry run pytest
 
