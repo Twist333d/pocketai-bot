@@ -82,7 +82,7 @@ jobs:
     if: always()
     steps:
       - name: Notify on Slack - Secrets Found
-        if: needs.gitguardian-scan.result == 'failure'
+        if: steps.ggshield.outputs.policy_break_count_critical != '0'
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: 'C071TGA9KJ9'
