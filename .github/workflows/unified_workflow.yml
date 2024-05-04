@@ -95,7 +95,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: 'C071TGA9KJ9'
-          slack-message: "❌ Build failed. Review required at ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+          slack-message: "❌ Build failed. Review details here: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
