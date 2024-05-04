@@ -8,8 +8,8 @@ import os
 from dotenv import load_dotenv
 
 # other modules
-from ai_on_the_go.webhook_utils import write_last_webhook_url, read_last_webhook_url
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
+from ai_on_the_go.basic_setup import load_env_vars
 
 # General
 from collections import defaultdict
@@ -23,20 +23,19 @@ from fastapi.responses import JSONResponse
 
 # initialize FastAPI
 app = FastAPI()
-# lets add another line just for testing
+# let's add another line just for testing
 
 # Access env variables
 load_dotenv()
 
-# Access variables
+# Load all environment variables
+env = os.getenv("ENV", 'dev') # default to development
+load_env_vars(env) # get all env vars
+
+# Extract each needed variable
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-print(f"GROQ key set: {GROQ_API_KEY}")
-BOT_TOKEN = os.getenv("PROD_BOT_TOKEN")
-print(f"BOT token set: {BOT_TOKEN}")
-WEBHOOK_URL = os.getenv("PROD_WEBHOOK_URL")
-print(f"WEBHOOK_URL set: {WEBHOOK_URL}")
-# GROQ_API_KEY = "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"
-# BOT_TOKEN = "7144711700:AAE3Wt-vrcpfM43wSK1eMFUMFXPcYKfte64"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 # Telegram bot setup
 bot = Bot(token=BOT_TOKEN)
@@ -56,64 +55,36 @@ llm = ChatGroq(
 conversations = defaultdict(lambda: None)  #
 
 
-# check, if webhook is valid
-async def check_and_update_webhook():
-    desired_webhook_url = WEBHOOK_URL
-    last_webhook_url = read_last_webhook_url()
 
-    if last_webhook_url != desired_webhook_url:
-        await bot.set_webhook(url=desired_webhook_url)
-        write_last_webhook_url(desired_webhook_url)
-        print("Webhook set successfully to", desired_webhook_url)
+# A new way to check and update webhook
+
+async def check_webhook():
+    current_webhook_info = await bot.getWebhookInfo()
+    current_webhook_url = current_webhook_info.url
+    logger.info(f"Current webhook URL: {current_webhook_url}")
+
+    if current_webhook_url != WEBHOOK_URL:
+        try:
+            await bot.setWebhook(WEBHOOK_URL)
+            logger.info(f"Webhook successfully updated")
+        except Exception as e:
+            logger.info(f"Webhook update failed: {e}")
     else:
-        print("Webhook already set to the correct URL, no update needed.")
+        logger.info(f"Webhook already set, no update needed.")
 
-
-# Let's replace on_event with lifespan
-"""
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """ """
-    Defining lifespan context manager that will:
-    - executes code before application accepts any requests
-    - executes code after application has finished accepting any requests
-    Use case: Loads the resources only before they are needed
-    :param app:
-    :return:
-    """ """
-    # initialize the application
-    logger.debug("Starting application initialization.")
-    try:
-        await application.initialize()  # no longer needed
-        # setup the webhook
-        # Optionally check an environment variable to conditionally set the webhook
-        if os.getenv("SET_WEBHOOK", "false").lower() in ['true', '1', 't']:
-            await check_and_update_webhook()
-        #webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-        #await bot.set_webhook(url=webhook_url)
-        logger.info("Webhook setup complete.")
-    except Exception as e:
-        print(f"Error during application initialization: {e}")
-"""
 
 
 @app.on_event("startup")
 async def startup():
     # initialize the application
-    logger.debug("Starting application initialization.")
+    logger.debug("*** APPLICATION INITIALIZATION ***.")
     try:
         await application.initialize()
-        if os.getenv("SET_WEBHOOK", "false").lower() in ["true", "1", "t"]:
-            await check_and_update_webhook()
-            logger.info("Webhook setup complete.")
+        logger.debug("*** CHECKING WEBHOOK SETUP ***")
+        await check_webhook()
+
     except Exception as e:
-        print(f"Error during application initialization: {e}")
-
-        # setup the webhook
-        # webhook_url = f"https://ai-on-the-go-7a6698c2fd9b.herokuapp.com/webhook"
-        # await bot.set_webhook(url=webhook_url)
-        # logger.info("Webhook setup complete at %s", webhook_url)
-
+        logger.error(f"Error during application initialization: {e}")
 
 # Command handler for /start
 async def start(update: Update, context):
