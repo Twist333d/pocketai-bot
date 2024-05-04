@@ -53,9 +53,6 @@ llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY,
 conversations = defaultdict(lambda: None)  #
 
 
-# A new way to check and update webhook
-
-
 async def check_webhook():
     current_webhook_info = await bot.getWebhookInfo()
     current_webhook_url = current_webhook_info.url
