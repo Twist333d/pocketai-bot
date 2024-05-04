@@ -29,8 +29,8 @@ app = FastAPI()
 load_dotenv()
 
 # Load all environment variables
-env = os.getenv("ENV", 'dev') # default to development
-load_env_vars(env) # get all env vars
+env = os.getenv("ENV", "dev")  # default to development
+load_env_vars(env)  # get all env vars
 
 # Extract each needed variable
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -55,8 +55,8 @@ llm = ChatGroq(
 conversations = defaultdict(lambda: None)  #
 
 
-
 # A new way to check and update webhook
+
 
 async def check_webhook():
     current_webhook_info = await bot.getWebhookInfo()
@@ -66,12 +66,11 @@ async def check_webhook():
     if current_webhook_url != WEBHOOK_URL:
         try:
             await bot.setWebhook(WEBHOOK_URL)
-            logger.info(f"Webhook successfully updated")
+            logger.info("Webhook successfully updated")
         except Exception as e:
             logger.info(f"Webhook update failed: {e}")
     else:
-        logger.info(f"Webhook already set, no update needed.")
-
+        logger.info("Webhook already set, no update needed.")
 
 
 @app.on_event("startup")
@@ -85,6 +84,7 @@ async def startup():
 
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
+
 
 # Command handler for /start
 async def start(update: Update, context):
