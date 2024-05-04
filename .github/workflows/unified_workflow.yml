@@ -22,16 +22,17 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
+        run: pip install poetry && poetry install
       - name: Run tests
         env: 
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        run: |
-          poetry run pytest
+        run: poetry run pytest
+      - name: Set test result output
+        run: echo "result=${{ job.status }}" >> $GITHUB_ENV
+    outputs:
+      result: ${{ steps.set_test_result.outputs.result }}
 
   gitguardian-scan:
     name: GitGuardian Scan
@@ -41,23 +42,22 @@ jobs:
       - name: Checkout for scan
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # fetch all history so multiple commits can be scanned
+          fetch-depth: 0
       - name: GitGuardian scan
-        id: ggshield
         uses: GitGuardian/ggshield-action@v1.27.0
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
         with:
           args: --ignore-known-secrets
       - name: Check scan result
-        if: steps.ggshield.outputs.policy_break_count != '0'
         run: |
-          echo "Policy breaks detected: ${{ steps.ggshield.outputs.policy_break_count }}"
-          if [ "${{ steps.ggshield.outputs.policy_break_count_critical }}" != "0" ]; then
+          if [ ${{ steps.ggshield.outputs.policy_break_count }} != '0' ]; then
             echo "Critical policy breaks detected."
-            exit 1
+            echo "result=failure" >> $GITHUB_ENV
           else
-            echo "Non-critical issues detected. Please review the report."
+            echo "result=success" >> $GITHUB_ENV
+    outputs:
+      result: ${{ env.result }}
 
   deploy:
     name: Deploy to Heroku
@@ -68,12 +68,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Deploy to Heroku
-        if: success() # This assumes the scan did not find critical breaks
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
+      - name: Set deploy result output
+        run: echo "result=${{ job.status }}" >> $GITHUB_ENV
+    outputs:
+      result: ${{ env.result }}
 
   notify:
     name: Notify on Slack
