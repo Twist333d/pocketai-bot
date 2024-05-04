@@ -85,18 +85,18 @@ async def startup():
         await check_webhook()
 
         # Add handlers after initialization is confirmed
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(MessageHandler(
-            filters.TEXT & (~filters.COMMAND), handle_message))
-        logger.debug("Handlers added")
+        application.add_handler(CommandHandler("start", command_start))
+        application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+        logger.debug("Handlers successfully added")
 
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
 
 
 # Command handler for /start
-async def start(update: Update, context):
+async def command_start(update: Update, context):
     user_chat_id = update.effective_chat.id
+    logger.info("Start command received")
 
     logger.debug(f"Received /start command from user: {user_chat_id}")
     try:

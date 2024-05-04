@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import defaultdict
 
 # import start function
-from ai_on_the_go.bot import start, handle_message, webhook_updates
+from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ async def test_start_command():
 
     # Patch the logger to prevent actual logging during tests
     with patch("ai_on_the_go.bot.logger") as mock_logger:
-        await start(update, context)
+        await command_start(update, context)
         context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
         mock_logger.debug.assert_called()
 
