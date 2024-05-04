@@ -28,9 +28,7 @@ async def test_start_command():
     # Patch the logger to prevent actual logging during tests
     with patch("ai_on_the_go.bot.logger") as mock_logger:
         await start(update, context)
-        context.bot.send_message.assert_called_once_with(
-            chat_id=1, text="Hello! Welcome to AI On The Go Bot! Send any message to start AI-On The Go Bot."
-        )
+        context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
         mock_logger.debug.assert_called()
 
 

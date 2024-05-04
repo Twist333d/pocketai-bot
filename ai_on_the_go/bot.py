@@ -47,9 +47,9 @@ application = Application.builder().token(BOT_TOKEN).build()
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 # Set lower verbosity for httpx and telegram
-#logging.getLogger('httpx').setLevel(logging.WARNING)
-#logging.getLogger('telegram').setLevel(logging.WARNING)
-#logging.getLogger('httpcore').setLevel(logging.WARNING)
+# logging.getLogger('httpx').setLevel(logging.WARNING)
+# logging.getLogger('telegram').setLevel(logging.WARNING)
+# logging.getLogger('httpcore').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Configure langchain groq client
@@ -86,11 +86,13 @@ async def startup():
 
         # Add handlers after initialization is confirmed
         application.add_handler(CommandHandler("start", start))
-        application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+        application.add_handler(MessageHandler(
+            filters.TEXT & (~filters.COMMAND), handle_message))
         logger.debug("Handlers added")
 
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
+
 
 # Command handler for /start
 async def start(update: Update, context):
@@ -129,8 +131,8 @@ async def handle_message(update: Update, context):
 
 
 # Add handlers to the application
-#application.add_handler(CommandHandler("start", start))
-#application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+# application.add_handler(CommandHandler("start", start))
+# application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
 
 # Setup the webhook
