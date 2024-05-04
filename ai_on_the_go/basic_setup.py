@@ -1,9 +1,8 @@
 import os
 from dotenv import load_dotenv
-import logging
 
-# Setup logger
-logger = logging.getLogger(__name__)
+from ai_on_the_go.bot import logger
+
 
 
 # A list of all environment variables
