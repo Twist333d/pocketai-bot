@@ -13,6 +13,7 @@ from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+
 # Fixture for initializing the application
 @pytest.fixture(scope="module")
 async def application():
@@ -20,6 +21,7 @@ async def application():
     await application.initialize()
     yield application
     await application.shutdown()
+
 
 @pytest.mark.asyncio
 async def test_webhook_valid_request(application):
@@ -42,6 +44,7 @@ async def test_webhook_valid_request(application):
             assert response.status_code == 200
             mock_process_update.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_webhook_with_different_update_types(application):
     inline_query_data = {
@@ -62,6 +65,7 @@ async def test_webhook_with_different_update_types(application):
             assert response.status_code == 200
             mock_process_update.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_start_command():
     update = Update(
@@ -79,6 +83,7 @@ async def test_start_command():
 
     await command_start(update, context)
     context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
+
 
 @pytest.mark.asyncio
 async def test_handle_message_success():
@@ -101,6 +106,7 @@ async def test_handle_message_success():
             mock_response.assert_called_once_with(mock_setup.return_value, "Hello, bot!")
             context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, human!")
 
+
 @pytest.mark.asyncio
 async def test_handle_message_llm_failure():
     update = Update(
@@ -121,6 +127,7 @@ async def test_handle_message_llm_failure():
             with pytest.raises(Exception):
                 await handle_message(update, context)
             mock_response.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_session_persistence():

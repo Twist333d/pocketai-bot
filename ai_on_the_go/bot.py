@@ -1,6 +1,6 @@
 # Telegram
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ApplicationBuilder, ContextTypes
+from telegram import Update
+from telegram.ext import CommandHandler, MessageHandler, filters, ApplicationBuilder, ContextTypes
 
 # utils
 import logging
@@ -107,11 +107,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error("Error during message handling: %s", str(e))
         raise e
-
-
-# Add handlers to the application
-# application.add_handler(CommandHandler("start", start))
-# application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
 
 # Setup the webhook
