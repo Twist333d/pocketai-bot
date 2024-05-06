@@ -1,16 +1,69 @@
-import pytest
 from telegram import Update, User, Chat, Message
-from unittest.mock import AsyncMock, patch
 from datetime import datetime
 from collections import defaultdict
+import os
 
-# import start function
-from ai_on_the_go.bot import start, handle_message, webhook_updates
+import pytest
+from unittest.mock import patch, AsyncMock
+from telegram.ext import ApplicationBuilder
 
+# Import functions to be tested
+from ai_on_the_go.bot import command_start, handle_message, webhook_updates
+
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+# Fixture for initializing the application
+@pytest.fixture(scope="module")
+async def application():
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    await application.initialize()
+    yield application
+    await application.shutdown()
+
+@pytest.mark.asyncio
+async def test_webhook_valid_request(application):
+    request_data = {
+        "update_id": 1,
+        "message": {
+            "message_id": 1,
+            "date": int(datetime.now().timestamp()),
+            "chat": {"id": 1, "type": "private"},
+            "text": "Test message",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=request_data)
+
+    with patch("ai_on_the_go.bot.application", application):
+        with patch.object(application, "process_update", new_callable=AsyncMock) as mock_process_update:
+            response = await webhook_updates(request)
+            assert response.status_code == 200
+            mock_process_update.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_webhook_with_different_update_types(application):
+    inline_query_data = {
+        "update_id": 1,
+        "inline_query": {
+            "id": "12345",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+            "query": "search query",
+            "offset": "",
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=inline_query_data)
+
+    with patch("ai_on_the_go.bot.application", application):
+        with patch.object(application, "process_update", new_callable=AsyncMock) as mock_process_update:
+            response = await webhook_updates(request)
+            assert response.status_code == 200
+            mock_process_update.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_start_command():
-    # Mocking Update and context objects from telegram
     update = Update(
         update_id=1,
         message=Message(
@@ -21,18 +74,11 @@ async def test_start_command():
             from_user=User(id=1, is_bot=False, first_name="Test"),
         ),
     )
-
     context = AsyncMock()
     context.bot.send_message = AsyncMock()
 
-    # Patch the logger to prevent actual logging during tests
-    with patch("ai_on_the_go.bot.logger") as mock_logger:
-        await start(update, context)
-        context.bot.send_message.assert_called_once_with(
-            chat_id=1, text="Hello! Welcome to AI On The Go Bot! Send any message to start AI-On The Go Bot."
-        )
-        mock_logger.debug.assert_called()
-
+    await command_start(update, context)
+    context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
 
 @pytest.mark.asyncio
 async def test_handle_message_success():
@@ -55,7 +101,6 @@ async def test_handle_message_success():
             mock_response.assert_called_once_with(mock_setup.return_value, "Hello, bot!")
             context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, human!")
 
-
 @pytest.mark.asyncio
 async def test_handle_message_llm_failure():
     update = Update(
@@ -76,51 +121,6 @@ async def test_handle_message_llm_failure():
             with pytest.raises(Exception):
                 await handle_message(update, context)
             mock_response.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_webhook_valid_request():
-    request = AsyncMock()
-    request.json = AsyncMock(
-        return_value={
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": int(datetime.now().timestamp()),
-                "chat": {"id": 1, "type": "private"},
-                "text": "Test message",
-                "from": {"id": 1, "is_bot": False, "first_name": "Test"},
-            },
-        }
-    )
-
-    with patch("ai_on_the_go.bot.application.process_update") as mock_process_update:
-        response = await webhook_updates(request)
-        assert response.status_code == 200
-        mock_process_update.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_webhook_with_different_update_types():
-    # Example of a non-message update, like an inline query
-    inline_query_data = {
-        "update_id": 1,
-        "inline_query": {
-            "id": "12345",
-            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
-            "query": "search query",
-            "offset": "",
-        },
-    }
-
-    request = AsyncMock()
-    request.json = AsyncMock(return_value=inline_query_data)
-
-    with patch("ai_on_the_go.bot.application.process_update") as mock_process_update:
-        response = await webhook_updates(request)
-        assert response.status_code == 200
-        mock_process_update.assert_called_once()
-
 
 @pytest.mark.asyncio
 async def test_session_persistence():

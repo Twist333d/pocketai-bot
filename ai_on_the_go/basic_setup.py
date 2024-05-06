@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 import logging
 
-# Setup logger
 logger = logging.getLogger(__name__)
 
 
