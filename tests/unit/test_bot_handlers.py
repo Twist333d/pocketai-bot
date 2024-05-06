@@ -10,6 +10,7 @@ from telegram.ext import ApplicationBuilder
 # Import functions to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Fixture for initializing the application
@@ -20,12 +21,46 @@ async def application():
     yield application
     await application.shutdown()
 
+@pytest.mark.asyncio
+async def test_webhook_valid_request(application):
+    request_data = {
+        "update_id": 1,
+        "message": {
+            "message_id": 1,
+            "date": int(datetime.now().timestamp()),
+            "chat": {"id": 1, "type": "private"},
+            "text": "Test message",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=request_data)
 
+    with patch("ai_on_the_go.bot.application", application):
+        with patch.object(application, "process_update", new_callable=AsyncMock) as mock_process_update:
+            response = await webhook_updates(request)
+            assert response.status_code == 200
+            mock_process_update.assert_called_once()
 
+@pytest.mark.asyncio
+async def test_webhook_with_different_update_types(application):
+    inline_query_data = {
+        "update_id": 1,
+        "inline_query": {
+            "id": "12345",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+            "query": "search query",
+            "offset": "",
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=inline_query_data)
 
-
-
-# ...
+    with patch("ai_on_the_go.bot.application", application):
+        with patch.object(application, "process_update", new_callable=AsyncMock) as mock_process_update:
+            response = await webhook_updates(request)
+            assert response.status_code == 200
+            mock_process_update.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_start_command():
