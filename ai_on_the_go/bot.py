@@ -57,7 +57,6 @@ llm = ChatGroq(temperature=0.8, groq_api_key=GROQ_API_KEY,
 conversations = defaultdict(lambda: None)  #
 
 
-
 async def check_webhook():
     current_webhook_info = await bot.get_webhook_info()
     current_webhook_url = current_webhook_info.url
@@ -145,16 +144,6 @@ async def startup():
         global application
         application = ApplicationBuilder().token(BOT_TOKEN).build()
         bot = application.bot
-        # initialize
-        await application.initialize()
-        logger.debug(application)
-        logger.debug(f"Bot Token: {bot.token}")
-        logger.debug(f"Bot url: {bot.base_url}") # Async call to get username
-        logger.debug(f"Bot commands: {await bot.get_my_commands()}")
-
-        # Setup webhook
-        logger.debug("*** CHECKING WEBHOOK SETUP ***")
-        await check_webhook()
 
         # Add handlers after initialization is confirmed
         application.add_handler(CommandHandler("start", command_start))
@@ -162,10 +151,22 @@ async def startup():
             filters.TEXT & (~filters.COMMAND), handle_message))
         logger.debug("Handlers successfully added")
 
+        # initialize
+        await application.initialize()
+        logger.debug(application)
+        logger.debug(f"Bot Token: {bot.token}")
+        logger.debug(f"Bot url: {bot.base_url}")  # Async call to get username
+        logger.debug(f"Bot commands: {await bot.get_my_commands()}")
+
+        # Setup webhook
+        logger.debug("*** CHECKING WEBHOOK SETUP ***")
+        await check_webhook()
+
 
 
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
+
 
 # Run the app using Uvicorn, if the script is run directly
 if __name__ == "__main__":

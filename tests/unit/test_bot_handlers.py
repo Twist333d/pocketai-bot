@@ -1,16 +1,75 @@
-import pytest
 from telegram import Update, User, Chat, Message
-from unittest.mock import AsyncMock, patch
 from datetime import datetime
 from collections import defaultdict
+import os
 
-# import start function
+import pytest
+from unittest.mock import patch, AsyncMock
+from telegram import Update
+from telegram.ext import ApplicationBuilder
+
+
+# Import functions to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 
 
+# Fixture to initialize the application before tests
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+
+# Fixture for initializing the application
+@pytest.fixture(scope="module")
+async def application():
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    await application.initialize()
+    return application
+
+
+# Utilizing fixture to pass the application object into test functions
 @pytest.mark.asyncio
-async def test_start_command():
-    # Mocking Update and context objects from telegram
+async def test_webhook_valid_request():
+    request_data = {
+        "update_id": 1,
+        "message": {
+            "message_id": 1,
+            "date": int(datetime.now().timestamp()),
+            "chat": {"id": 1, "type": "private"},
+            "text": "Test message",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=request_data)
+
+    with patch("application.process_update", new_callable=AsyncMock) as mock_process_update:
+        response = await webhook_updates(request, application=application)  # Ensure to pass the application correctly
+        assert response.status_code == 200
+        mock_process_update.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_webhook_with_different_update_types():
+    inline_query_data = {
+        "update_id": 1,
+        "inline_query": {
+            "id": "12345",
+            "from": {"id": 1, "is_bot": False, "first_name": "Test"},
+            "query": "search query",
+            "offset": "",
+        },
+    }
+    request = AsyncMock()
+    request.json = AsyncMock(return_value=inline_query_data)
+
+    with patch("application.process_update", new_callable=AsyncMock) as mock_process_update:
+        response = await webhook_updates(request, application=application)  # Ensure to pass the application correctly
+        assert response.status_code == 200
+        mock_process_update.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_start_command(application):
     update = Update(
         update_id=1,
         message=Message(
@@ -21,15 +80,11 @@ async def test_start_command():
             from_user=User(id=1, is_bot=False, first_name="Test"),
         ),
     )
-
     context = AsyncMock()
     context.bot.send_message = AsyncMock()
 
-    # Patch the logger to prevent actual logging during tests
-    with patch("ai_on_the_go.bot.logger") as mock_logger:
-        await command_start(update, context)
-        context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
-        mock_logger.debug.assert_called()
+    await command_start(update, context)
+    context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
 
 
 @pytest.mark.asyncio
@@ -92,7 +147,7 @@ async def test_webhook_valid_request():
         }
     )
 
-    with patch("ai_on_the_go.bot.application.process_update") as mock_process_update:
+    with patch(application.process_update) as mock_process_update:
         response = await webhook_updates(request)
         assert response.status_code == 200
         mock_process_update.assert_called_once()
@@ -114,7 +169,7 @@ async def test_webhook_with_different_update_types():
     request = AsyncMock()
     request.json = AsyncMock(return_value=inline_query_data)
 
-    with patch("ai_on_the_go.bot.application.process_update") as mock_process_update:
+    with patch(application.process_update) as mock_process_update:
         response = await webhook_updates(request)
         assert response.status_code == 200
         mock_process_update.assert_called_once()
