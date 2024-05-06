@@ -117,6 +117,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Setup the webhook
 @app.post("/webhook")
 async def webhook_updates(request: Request):
+    global application
     try:
         data = await request.json()
         logger.debug(f"Received webhook data: {data}")
@@ -161,8 +162,6 @@ async def startup():
         # Setup webhook
         logger.debug("*** CHECKING WEBHOOK SETUP ***")
         await check_webhook()
-
-
 
     except Exception as e:
         logger.error(f"Error during application initialization: {e}")
