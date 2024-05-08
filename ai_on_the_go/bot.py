@@ -88,6 +88,36 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         raise e
 
 
+async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_chat_id = update.effective_chat.id
+    logger.debug(f"Received /new command from user: {user_chat_id}")
+
+    # try to send a message which says that a new chat has started
+    try:
+        await context.bot.send_message(
+            chat_id=user_chat_id,
+            text="✅ Starting a new conversation",
+            parse_mode="MarkdownV2"
+        )
+
+        await context.bot.send_message(
+            chat_id=user_chat_id,
+            text="*How can I help you today?*\n"
+                 "\\- Write a text inviting my neighbors to a barbecue\n"
+                 "\\- Quiz me on world capitals\n"
+                 "\\- Create a workout plan for resistance training",
+            parse_mode="MarkdownV2"
+        )
+    # except catch an error
+    except Exception as e:
+        logger.error("Failed to send start message due to: %s", str(e))
+        await context.bot.send_message(
+            chat_id=user_chat_id,
+            text="Sorry, there was an error in handling your request, please try again"
+        )
+        raise e
+
+
 # Get message from user -> send to Groq API -> send back the response
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text  # extract text from the user message
@@ -146,6 +176,7 @@ async def startup():
         application.add_handler(MessageHandler(
             filters.TEXT & (~filters.COMMAND), handle_message))
         logger.debug("Handlers successfully added")
+        application.add_handler(CommandHandler("new", command_new))
 
         # initialize
         await application.initialize()
