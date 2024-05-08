@@ -92,9 +92,6 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
     logger.debug(f"Received /new command from user: {user_chat_id}")
 
-    # if user_id exists = delete the user
-    if user_chat_id not in conversations:
-        del conversations[user_chat_id] # remove existing conversation state
     # get a new conversation
     conversations[user_chat_id] = await setup_llm_conversation(llm)
 
@@ -107,12 +104,12 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=user_chat_id,
             text="Hi, I am your personal AI assistant! I'm here to help - whether you need answers, ideas or organisation,"
-                 "I can: \n"
-                 "\\- Answer questions on any topic\n"
-                 "\\- Help with brainstorming and planning\n"
-                 "\\- Assist with task management and reminders\n"
-                 ""
-                 "Ho can I assist you today?",
+            "I can: \n"
+            "\\- Answer questions on any topic\n"
+            "\\- Help with brainstorming and planning\n"
+            "\\- Assist with task management and reminders\n"
+            ""
+            "How can I assist you today?",
             parse_mode="MarkdownV2",
         )
     # except catch an error
