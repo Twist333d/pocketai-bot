@@ -92,28 +92,34 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
     logger.debug(f"Received /new command from user: {user_chat_id}")
 
+    # if user_id exists = delete the user
+    if user_chat_id not in conversations:
+        del conversations[user_chat_id] # remove existing conversation state
+    # get a new conversation
+    conversations[user_chat_id] = await setup_llm_conversation(llm)
+
     # try to send a message which says that a new chat has started
     try:
         await context.bot.send_message(
-            chat_id=user_chat_id,
-            text="✅ Starting a new conversation",
-            parse_mode="MarkdownV2"
+            chat_id=user_chat_id, text="✅ Starting a new conversation", parse_mode="MarkdownV2"
         )
 
         await context.bot.send_message(
             chat_id=user_chat_id,
-            text="*How can I help you today?*\n"
-                 "\\- Write a text inviting my neighbors to a barbecue\n"
-                 "\\- Quiz me on world capitals\n"
-                 "\\- Create a workout plan for resistance training",
-            parse_mode="MarkdownV2"
+            text="Hi, I am your personal AI assistant! I'm here to help - whether you need answers, ideas or organisation,"
+                 "I can: \n"
+                 "\\- Answer questions on any topic\n"
+                 "\\- Help with brainstorming and planning\n"
+                 "\\- Assist with task management and reminders\n"
+                 ""
+                 "Ho can I assist you today?",
+            parse_mode="MarkdownV2",
         )
     # except catch an error
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
         await context.bot.send_message(
-            chat_id=user_chat_id,
-            text="Sorry, there was an error in handling your request, please try again"
+            chat_id=user_chat_id, text="Sorry, there was an error in handling your request, please try again"
         )
         raise e
 
