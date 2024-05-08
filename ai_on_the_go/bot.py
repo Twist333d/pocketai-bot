@@ -92,7 +92,6 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
     logger.debug(f"Received /new command from user: {user_chat_id}")
 
-
     # get a new conversation
     conversations[user_chat_id] = await setup_llm_conversation(llm)
 
@@ -110,7 +109,7 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "\\- Help with brainstorming and planning\n"
             "\\- Assist with task management and reminders\n"
             ""
-            "Ho can I assist you today?",
+            "How can I assist you today?",
             parse_mode="MarkdownV2",
         )
     # except catch an error
