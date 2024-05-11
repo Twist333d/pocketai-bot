@@ -103,7 +103,7 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(
             chat_id=user_chat_id,
-            text="Hi, I am your personal AI assistant! I'm here to help - whether you need answers, ideas or organisation,"
+            text="Hi, I am your personal AI assistant\! I'm here to help - whether you need answers, ideas or organisation,"
             "I can: \n"
             "\\- Answer questions on any topic\n"
             "\\- Help with brainstorming and planning\n"
