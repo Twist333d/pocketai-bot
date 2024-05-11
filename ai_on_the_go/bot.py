@@ -104,12 +104,14 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ""
         "How can I assist you today?"
     )
-    #first_message = escape_markdown(first_message)
-    #second_message = escape_markdown(second_message)
+    # first_message = escape_markdown(first_message)
+    # second_message = escape_markdown(second_message)
 
     # try to send a message which says that a new chat has started
     try:
-        await context.bot.send_message(chat_id=user_chat_id, text=escape_markdown(first_message), parse_mode="MarkdownV2")
+        await context.bot.send_message(
+            chat_id=user_chat_id, text=escape_markdown(first_message), parse_mode="MarkdownV2"
+        )
 
         await context.bot.send_message(
             chat_id=user_chat_id,
