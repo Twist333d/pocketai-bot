@@ -9,6 +9,7 @@ from telegram.ext import ApplicationBuilder
 
 # Import functions to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
+from ai_on_the_go.utils import escape_markdown
 
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -82,8 +83,10 @@ async def test_start_command():
     context.bot.send_message = AsyncMock()
 
     await command_start(update, context)
+    reply = "Welcome to PocketGPT Bot🤖! Click on the Menu button to see a list of available options."
+    reply = escape_markdown(reply)
     context.bot.send_message.assert_called_once_with(
-        chat_id=1, text="Welcome to PocketGPT Bot🤖\! Click on the Menu button to see a list of available options."
+        chat_id=1, text=reply, parse_mode="MarkdownV2"
     )
 
 

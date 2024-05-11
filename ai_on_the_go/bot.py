@@ -82,7 +82,7 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = "Welcome to PocketGPT Bot🤖! Click on the Menu button to see a list of available options."
     welcome_text = escape_markdown(welcome_text)
     try:
-        await context.bot.send_message(chat_id=user_chat_id, text=welcome_text)
+        await context.bot.send_message(chat_id=user_chat_id, text=welcome_text, parse_mode="MarkdownV2")
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
@@ -96,7 +96,7 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conversations[user_chat_id] = await setup_llm_conversation(llm)
     first_message = "✅Starting a new conversation"
     second_message = (
-        "Hi, I am your personal AI assistant\! I'm here to help - whether you need answers, ideas or organisation,"
+        "Hi, I am your personal AI assistant! I'm here to help - whether you need answers, ideas or organisation,"
         "I can: \n"
         "\\- Answer questions on any topic\n"
         "\\- Help with brainstorming and planning\n"
