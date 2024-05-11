@@ -9,9 +9,11 @@ from telegram.ext import ApplicationBuilder
 
 # Import functions to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
+from ai_on_the_go.utils import escape_markdown, load_markdown_message
 
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 
 # Fixture for initializing the application
 @pytest.fixture(scope="module")
@@ -20,6 +22,7 @@ async def application():
     await application.initialize()
     yield application
     await application.shutdown()
+
 
 @pytest.mark.asyncio
 async def test_webhook_valid_request(application):
@@ -42,6 +45,7 @@ async def test_webhook_valid_request(application):
             assert response.status_code == 200
             mock_process_update.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_webhook_with_different_update_types(application):
     inline_query_data = {
@@ -62,6 +66,7 @@ async def test_webhook_with_different_update_types(application):
             assert response.status_code == 200
             mock_process_update.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_start_command():
     update = Update(
@@ -78,7 +83,9 @@ async def test_start_command():
     context.bot.send_message = AsyncMock()
 
     await command_start(update, context)
-    context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, how can I help you today?")
+    reply = load_markdown_message("start_message.md")
+    context.bot.send_message.assert_called_once_with(chat_id=1, text=escape_markdown(reply), parse_mode="MarkdownV2")
+
 
 @pytest.mark.asyncio
 async def test_handle_message_success():
@@ -99,7 +106,9 @@ async def test_handle_message_success():
         with patch("ai_on_the_go.bot.get_llm_response", return_value="Hello, human!") as mock_response:
             await handle_message(update, context)
             mock_response.assert_called_once_with(mock_setup.return_value, "Hello, bot!")
-            context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, human!")
+            escapted_response = escape_markdown("Hello, human!")
+            context.bot.send_message.assert_called_once_with(chat_id=1, text=escapted_response, parse_mode="MarkdownV2")
+
 
 @pytest.mark.asyncio
 async def test_handle_message_llm_failure():
@@ -121,6 +130,7 @@ async def test_handle_message_llm_failure():
             with pytest.raises(Exception):
                 await handle_message(update, context)
             mock_response.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_session_persistence():
@@ -161,12 +171,16 @@ async def test_session_persistence():
                 # Process first message
                 await handle_message(update1, context1)
                 mock_response.assert_called_with(mock_setup.return_value, "First message")
-                context1.bot.send_message.assert_called_with(chat_id=1, text="Response to first message")
+                context1.bot.send_message.assert_called_with(
+                    chat_id=1, text="Response to first message", parse_mode="MarkdownV2"
+                )
 
                 # Process second message
                 await handle_message(update2, context2)
                 mock_response.assert_called_with(mock_setup.return_value, "Second message")
-                context2.bot.send_message.assert_called_with(chat_id=1, text="Response to second message")
+                context2.bot.send_message.assert_called_with(
+                    chat_id=1, text="Response to second message", parse_mode="MarkdownV2"
+                )
 
     # Verify that the same conversation object is used for the same user
     assert (

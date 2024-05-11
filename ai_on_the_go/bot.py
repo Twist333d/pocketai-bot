@@ -1,6 +1,6 @@
 # Telegram
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ApplicationBuilder, ContextTypes
+from telegram import Update
+from telegram.ext import CommandHandler, MessageHandler, filters, ApplicationBuilder, ContextTypes
 
 # utils
 import logging
@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # other modules
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
 from ai_on_the_go.basic_setup import load_env_vars
+from ai_on_the_go.utils import escape_markdown, load_markdown_message
 
 # General
 from collections import defaultdict
@@ -22,7 +23,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 # Setup the port
-PORT = 5000
+PORT = 8000
 
 # initialize FastAPI
 app = FastAPI()
@@ -78,13 +79,42 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("Start command received")
 
     logger.debug(f"Received /start command from user: {user_chat_id}")
+    start_message = load_markdown_message("start_message.md")
     try:
         await context.bot.send_message(
-            chat_id=user_chat_id,
-            text="Hello, how can I help you today?",
+            chat_id=user_chat_id, text=escape_markdown(start_message), parse_mode="MarkdownV2"
         )
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
+        raise e
+
+
+async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_chat_id = update.effective_chat.id
+    logger.debug(f"Received /new command from user: {user_chat_id}")
+
+    # get a new conversation
+    conversations[user_chat_id] = await setup_llm_conversation(llm)
+    first_message = load_markdown_message("new_message1.md")
+    second_message = load_markdown_message("new_message2.md")
+
+    # try to send a message which says that a new chat has started
+    try:
+        await context.bot.send_message(
+            chat_id=user_chat_id, text=escape_markdown(first_message), parse_mode="MarkdownV2"
+        )
+
+        await context.bot.send_message(
+            chat_id=user_chat_id,
+            text=escape_markdown(second_message),
+            parse_mode="MarkdownV2",
+        )
+    # except catch an error
+    except Exception as e:
+        logger.error("Failed to send start message due to: %s", str(e))
+        await context.bot.send_message(
+            chat_id=user_chat_id, text="Sorry, there was an error in handling your request, please try again"
+        )
         raise e
 
 
@@ -101,17 +131,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         chat_response = await get_llm_response(conversations[user_id], user_message)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text=escape_markdown(chat_response), parse_mode="MarkdownV2"
+        )
         logger.debug("Sent response to user %s: %s",
                      update.effective_chat.id, chat_response)
     except Exception as e:
         logger.error("Error during message handling: %s", str(e))
         raise e
-
-
-# Add handlers to the application
-# application.add_handler(CommandHandler("start", start))
-# application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
 
 # Setup the webhook
@@ -151,6 +178,7 @@ async def startup():
         application.add_handler(MessageHandler(
             filters.TEXT & (~filters.COMMAND), handle_message))
         logger.debug("Handlers successfully added")
+        application.add_handler(CommandHandler("new", command_new))
 
         # initialize
         await application.initialize()
