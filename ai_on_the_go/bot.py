@@ -79,7 +79,7 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("Start command received")
 
     logger.debug(f"Received /start command from user: {user_chat_id}")
-    start_message = load_markdown_message('markdown/start_message.md')
+    start_message = load_markdown_message("markdown/start_message.md")
     try:
         await context.bot.send_message(chat_id=user_chat_id, text=start_message, parse_mode="MarkdownV2")
     except Exception as e:
@@ -93,8 +93,8 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # get a new conversation
     conversations[user_chat_id] = await setup_llm_conversation(llm)
-    first_message = load_markdown_message('markdown/new_message1.md')
-    second_message = load_markdown_message('markdown/new_message2.md')
+    first_message = load_markdown_message("markdown/new_message1.md")
+    second_message = load_markdown_message("markdown/new_message2.md")
 
     # try to send a message which says that a new chat has started
     try:
@@ -129,7 +129,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         chat_response = await get_llm_response(conversations[user_id], user_message)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=chat_response)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=escape_markdown(chat_response), parse_mode='MarkdownV2')
         logger.debug("Sent response to user %s: %s",
                      update.effective_chat.id, chat_response)
     except Exception as e:

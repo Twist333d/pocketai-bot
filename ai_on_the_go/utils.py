@@ -6,7 +6,6 @@ def escape_markdown(text):
     return "".join(f"\\{char}" if char in escape_chars else char for char in text)
 
 
-
 def load_markdown_message(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         return file.read()
