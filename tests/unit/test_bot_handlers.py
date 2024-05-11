@@ -83,9 +83,8 @@ async def test_start_command():
     context.bot.send_message = AsyncMock()
 
     await command_start(update, context)
-    reply = load_markdown_message('markdown/start_message.md')
-    reply = escape_markdown(reply)
-    context.bot.send_message.assert_called_once_with(chat_id=1, text=reply, parse_mode="MarkdownV2")
+    reply = load_markdown_message("start_message.md")
+    context.bot.send_message.assert_called_once_with(chat_id=1, text=escape_markdown(reply), parse_mode="MarkdownV2")
 
 
 @pytest.mark.asyncio
@@ -107,7 +106,8 @@ async def test_handle_message_success():
         with patch("ai_on_the_go.bot.get_llm_response", return_value="Hello, human!") as mock_response:
             await handle_message(update, context)
             mock_response.assert_called_once_with(mock_setup.return_value, "Hello, bot!")
-            context.bot.send_message.assert_called_once_with(chat_id=1, text="Hello, human!")
+            escapted_response = escape_markdown("Hello, human!")
+            context.bot.send_message.assert_called_once_with(chat_id=1, text=escapted_response, parse_mode='MarkdownV2')
 
 
 @pytest.mark.asyncio
@@ -171,12 +171,12 @@ async def test_session_persistence():
                 # Process first message
                 await handle_message(update1, context1)
                 mock_response.assert_called_with(mock_setup.return_value, "First message")
-                context1.bot.send_message.assert_called_with(chat_id=1, text="Response to first message")
+                context1.bot.send_message.assert_called_with(chat_id=1, text="Response to first message", parse_mode='MarkdownV2')
 
                 # Process second message
                 await handle_message(update2, context2)
                 mock_response.assert_called_with(mock_setup.return_value, "Second message")
-                context2.bot.send_message.assert_called_with(chat_id=1, text="Response to second message")
+                context2.bot.send_message.assert_called_with(chat_id=1, text="Response to second message", parse_mode='MarkdownV2')
 
     # Verify that the same conversation object is used for the same user
     assert (
