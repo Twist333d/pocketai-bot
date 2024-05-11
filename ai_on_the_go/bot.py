@@ -22,7 +22,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 # Setup the port
-PORT = 5000
+PORT = 8000
 
 # initialize FastAPI
 app = FastAPI()
