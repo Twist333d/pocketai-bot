@@ -1,0 +1,26 @@
+#!/bin/sh
+
+echo "Formatting with Black"
+poetry run black --quiet .
+
+echo "Applying formatting with autopep8"
+poetry run autopep8 --in-place --exclude=.git,__pycache__,venv **/*.py
+
+echo "Checking code quality with flake8"
+poetry run flake8 .
+
+echo "Running tests and checking coverage"
+poetry run pytest --cov=ai_on_the_go --cov-report=html --cov-report=term
+
+echo "Scanning for secrets with ggshield"
+ggshield secret scan pre-push --ignore-known-secrets --show-secrets "$@"
+
+# Check if tests passed
+if [ $? -ne 0 ]; then
+  echo "Tests failed, push aborted."
+  exit 1
+fi
+
+echo "All checks passed. Proceeding with push."
+
+
