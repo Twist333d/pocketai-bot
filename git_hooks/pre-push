@@ -1,6 +1,5 @@
 #!/bin/sh
 
-echo "Running from a new script"
 echo "Formatting with Black"
 poetry run black --quiet .
 
