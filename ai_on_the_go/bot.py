@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # other modules
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
 from ai_on_the_go.basic_setup import load_env_vars
+from ai_on_the_go.utils import escape_markdown
 
 # General
 from collections import defaultdict
@@ -81,20 +82,11 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = "Welcome to PocketGPT Bot🤖! Click on the Menu button to see a list of available options."
     welcome_text = escape_markdown(welcome_text)
     try:
-        await context.bot.send_message(
-            chat_id=user_chat_id,
-            text= welcome_text
-        )
+        await context.bot.send_message(chat_id=user_chat_id, text=welcome_text)
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
 
-def escape_markdown(text):
-    # List of special characters that need to be escaped in MarkdownV2
-    escape_chars = '_*[]()~`>#+-=|{}.!'
-
-    # Escaping each character with a backslash
-    return ''.join(f'\\{char}' if char in escape_chars else char for char in text)
 
 async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
@@ -103,21 +95,21 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # get a new conversation
     conversations[user_chat_id] = await setup_llm_conversation(llm)
     first_message = "✅Starting a new conversation"
-    second_message = ( "Hi, I am your personal AI assistant\! I'm here to help - whether you need answers, ideas or organisation,"
-            "I can: \n"
-            "\\- Answer questions on any topic\n"
-            "\\- Help with brainstorming and planning\n"
-            "\\- Assist with task management and reminders\n"
-            ""
-            "How can I assist you today?")
+    second_message = (
+        "Hi, I am your personal AI assistant\! I'm here to help - whether you need answers, ideas or organisation,"
+        "I can: \n"
+        "\\- Answer questions on any topic\n"
+        "\\- Help with brainstorming and planning\n"
+        "\\- Assist with task management and reminders\n"
+        ""
+        "How can I assist you today?"
+    )
     first_message = escape_markdown(first_message)
     second_message = escape_markdown(second_message)
 
     # try to send a message which says that a new chat has started
     try:
-        await context.bot.send_message(
-            chat_id=user_chat_id, text=first_message, parse_mode="MarkdownV2"
-        )
+        await context.bot.send_message(chat_id=user_chat_id, text=first_message, parse_mode="MarkdownV2")
 
         await context.bot.send_message(
             chat_id=user_chat_id,
