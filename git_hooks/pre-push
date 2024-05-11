@@ -12,6 +12,7 @@ poetry run flake8 .
 echo "Running tests and checking coverage"
 poetry run pytest --cov=ai_on_the_go --cov-report=html --cov-report=term
 
+
 echo "Scanning for secrets with ggshield"
 ggshield secret scan pre-push --ignore-known-secrets --show-secrets "$@"
 

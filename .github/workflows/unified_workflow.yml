@@ -17,19 +17,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
-
       - name: Install dependencies
         run: |
           pip install poetry
           poetry install
-
       - name: Run tests
-        env: 
+        env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
@@ -61,15 +58,6 @@ jobs:
             exit 1
           else
             echo "Non-critical issues detected. Please review the report."
-      - name: Notify on Slack # Use this section for Slack notifications
-        id: slack
-        if: steps.ggshield.outputs.policy_break_count != '0' && steps.ggshield.outputs.policy_break_count_critical == '0'
-        uses: slackapi/slack-github-action@v1.26.0 # slack action
-        with:
-          channel-id: 'C071TGA9KJ9'
-          slack-message: "Non-critical secrets or sensitive data might have been detected in your push. Please review."
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   deploy:
     name: Deploy to Heroku
@@ -80,9 +68,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Deploy to Heroku
-        if: needs.gitguardian-scan.outputs.policy_break_count_critical == '0'
+        if: success() # This assumes the scan did not find critical breaks
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: ${{ github.ref == 'refs/heads/develop' && 'pocketai-staging' || 'pocketai-prod' }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
+
+  notify:
+    name: Notify on Slack
+    needs: [build-and-test, gitguardian-scan, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify on Slack - Secrets Found
+        if: steps.ggshield.outputs.policy_break_count_critical != '0'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C071TGA9KJ9'
+          slack-message: "🚨 Secrets or sensitive data detected! Please review the details in GitHub: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify on Slack - Job Failed
+        if: needs.build-and-test.result == 'failure' || needs.gitguardian-scan.result == 'failure' || needs.deploy.result == 'failure'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C071TGA9KJ9'
+          slack-message: "❌ Build failed. Review details here: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify on Slack - Job Succeeded
+        if: needs.build-and-test.result == 'success' && needs.gitguardian-scan.result == 'success' && needs.deploy.result == 'success'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C071TGA9KJ9'
+          slack-message: "✅ All jobs completed successfully. See details: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

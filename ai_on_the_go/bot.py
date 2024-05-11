@@ -81,7 +81,9 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.debug(f"Received /start command from user: {user_chat_id}")
     start_message = load_markdown_message("start_message.md")
     try:
-        await context.bot.send_message(chat_id=user_chat_id, text=escape_markdown(start_message), parse_mode="MarkdownV2")
+        await context.bot.send_message(
+            chat_id=user_chat_id, text=escape_markdown(start_message), parse_mode="MarkdownV2"
+        )
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
