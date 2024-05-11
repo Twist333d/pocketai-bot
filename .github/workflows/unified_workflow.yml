@@ -26,7 +26,7 @@ jobs:
           pip install poetry
           poetry install
       - name: Run tests
-        env:
+        env: 
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
@@ -107,3 +107,4 @@ jobs:
           slack-message: "✅ All jobs completed successfully. See details: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
