@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # other modules
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
 from ai_on_the_go.basic_setup import load_env_vars
-from ai_on_the_go.utils import escape_markdown
+from ai_on_the_go.utils import escape_markdown, load_markdown_message
 
 # General
 from collections import defaultdict
@@ -79,10 +79,9 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("Start command received")
 
     logger.debug(f"Received /start command from user: {user_chat_id}")
-    welcome_text = "Welcome to PocketGPT Bot🤖! Click on the Menu button to see a list of available options."
-    welcome_text = escape_markdown(welcome_text)
+    start_message = load_markdown_message('markdown/start_message.md')
     try:
-        await context.bot.send_message(chat_id=user_chat_id, text=welcome_text, parse_mode="MarkdownV2")
+        await context.bot.send_message(chat_id=user_chat_id, text=start_message, parse_mode="MarkdownV2")
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
         raise e
@@ -94,18 +93,8 @@ async def command_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # get a new conversation
     conversations[user_chat_id] = await setup_llm_conversation(llm)
-    first_message = "✅Starting a new conversation"
-    second_message = (
-        "Hi, I am your personal AI assistant! I'm here to help - whether you need answers, ideas or organisation,"
-        "I can: \n"
-        "\\- Answer questions on any topic\n"
-        "\\- Help with brainstorming and planning\n"
-        "\\- Assist with task management and reminders\n"
-        ""
-        "How can I assist you today?"
-    )
-    # first_message = escape_markdown(first_message)
-    # second_message = escape_markdown(second_message)
+    first_message = load_markdown_message('markdown/new_message1.md')
+    second_message = load_markdown_message('markdown/new_message2.md')
 
     # try to send a message which says that a new chat has started
     try:
