@@ -81,7 +81,7 @@ async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             chat_id=user_chat_id,
-            text="Hello, how can I help you today?",
+            text="Welcome to PocketGPT Bot🤖\! Click on the Menu button to see a list of available options.",
         )
     except Exception as e:
         logger.error("Failed to send start message due to: %s", str(e))
