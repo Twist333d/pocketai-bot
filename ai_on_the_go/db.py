@@ -4,7 +4,20 @@ import logging
 
 # Setup logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+
+# Configure logging to console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)  # Set handler level to INFO
+
+# Create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Add handlers to the logger
+logger.addHandler(console_handler)
+
+# Set the logging level of the logger to INFO
+logger.setLevel(logging.INFO)
 
 # global variable
 pool = None
