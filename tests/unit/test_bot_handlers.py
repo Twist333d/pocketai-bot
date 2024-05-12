@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, patch
 from telegram import Update, User, Chat, Message
 from telegram.ext import ApplicationBuilder
 from datetime import datetime
-from collections import defaultdict
 from dotenv import load_dotenv
 import logging
+from collections import defaultdict
+
 
 # Import functions and components to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
-from ai_on_the_go.utils import escape_markdown, load_markdown_message
-from ai_on_the_go.db import create_db_pool, pool  # Ensure pool is globally accessible
+from ai_on_the_go.utils import escape_markdown
 
 # Set environment variables (ensure these are set for your test environment)
 os.environ["ENV"] = "dev"
@@ -22,12 +22,6 @@ load_dotenv()
 # Setup logger
 logger = logging.getLogger(__name__)
 
-# Configure logging to console
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)  # Set handler level to INFO
-
-
-
 @pytest.fixture(scope="module")
 async def application():
     """Fixture to initialize and tear down the Telegram application."""
@@ -36,27 +30,6 @@ async def application():
     yield app
     await app.shutdown()
 
-
-@pytest.fixture(scope='session', autouse=True)
-async def setup_and_teardown():
-    global pool
-    try:
-        if not pool:
-            logger.info("Initializing database connection pool")
-            pool = await create_db_pool()
-        else:
-            logger.info("Using existing database connection pool")
-
-        logger.info("Setup complete. Running tests...")
-        yield
-
-        if pool is not None:
-            logger.info("Closing database connection pool")
-            await pool.close()
-            pool = None
-    except Exception as e:
-        logger.error(f"Error in setup_and_teardown fixture: {e}")
-        raise
 @pytest.mark.asyncio
 async def test_webhook_valid_request(application):
     """Test to ensure webhook processing works correctly."""
@@ -73,13 +46,13 @@ async def test_webhook_valid_request(application):
     request = AsyncMock()
     request.json.return_value = request_data
 
-    with patch("ai_on_the_go.bot.application", application):
+    with patch("ai_on_the_go.bot.application", application), \
+         patch("ai_on_the_go.db.ensure_user_exists", AsyncMock(return_value=True)):
         response = await webhook_updates(request)
         assert response.status_code == 200
 
-
 @pytest.mark.asyncio
-async def test_start_command():
+async def test_start_command(mocker):
     """Test the start command handling."""
     update = Update(
         update_id=1,
@@ -92,14 +65,16 @@ async def test_start_command():
         ),
     )
     context = AsyncMock()
-    try:
-        logger.debug(f"Pool status: {pool}")
+
+    # Mock the ensure_user_exists function
+    mocker.patch("ai_on_the_go.bot.ensure_user_exists", return_value=None)
+
+    with patch("ai_on_the_go.utils.load_markdown_message", return_value="Welcome!"):
         await command_start(update, context)
-        reply = load_markdown_message("start_message.md")
-        context.bot.send_message.assert_called_once_with(chat_id=1, text=escape_markdown(reply), parse_mode="MarkdownV2")
-    except Exception as e:
-        logger.error(f"Error in test_start_command: {e}")
-        raise
+        text = escape_markdown("Welcome to *PocketGPT Bot 🤖*! Click on the *Menu* button to see a list of available options")
+        context.bot.send_message.assert_called_once_with(
+            chat_id=1, text=text, parse_mode="MarkdownV2"
+        )
 
 @pytest.mark.asyncio
 async def test_handle_message_success():
@@ -115,11 +90,11 @@ async def test_handle_message_success():
         ),
     )
     context = AsyncMock()
-    with patch("ai_on_the_go.bot.get_llm_response", return_value="Hello, human!") as mock_response:
+    with patch("ai_on_the_go.bot.get_llm_response", return_value="Hello, human!"):
         await handle_message(update, context)
-        mock_response.assert_called_once()
-        context.bot.send_message.assert_called_once_with(chat_id=1, text=escape_markdown("Hello, human!"), parse_mode="MarkdownV2")
-
+        context.bot.send_message.assert_called_once_with(
+            chat_id=1, text=escape_markdown("Hello, human!"), parse_mode="MarkdownV2"
+        )
 
 @pytest.mark.asyncio
 async def test_session_persistence():
@@ -138,7 +113,6 @@ async def test_session_persistence():
     with patch("ai_on_the_go.bot.conversations", new_callable=lambda: defaultdict(lambda: None)) as mock_conversations:
         await handle_message(update1, context)
         await handle_message(update2, context)
-
         assert (
             mock_conversations[1] is not None
         ), "Conversation object should persist across messages from the same user"
