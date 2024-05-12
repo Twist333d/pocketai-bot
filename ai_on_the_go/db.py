@@ -27,8 +27,11 @@ pool = None
 async def create_db_pool():
     global pool
     if pool is None:
-        pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
-        logger.info("Database connection established")
+        try:
+            pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
+            logger.info("Database connection established")
+        except Exception as e:
+            logger.error(f"Database connection error: {e}")
     else:
         logger.info("Using existing database connection pool.")
 
@@ -68,7 +71,7 @@ async def ensure_user_exists(user_data):
                 user_data["language_code"],
                 user_data["is_premium"],
             )
-            print("User created with new UUID.")
+            logger.info(f"User {user_data['id']} created")
         else:
             # Update existing user (if needed)
             await conn.execute(
@@ -80,4 +83,4 @@ async def ensure_user_exists(user_data):
                 user_data["is_premium"],
                 user_data["id"],
             )
-            print("User updated.")
+            logger.info(f"User {user_data['id']} updated")
