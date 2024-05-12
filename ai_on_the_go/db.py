@@ -27,7 +27,8 @@ pool = None
 # load env variables
 load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL")
-#print(DATABASE_URL)
+# print(DATABASE_URL)
+
 
 async def create_db_pool():
     global pool
