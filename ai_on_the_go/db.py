@@ -34,17 +34,24 @@ async def create_db_pool():
     global pool
     max_connections = 15
     if pool is None:
+        logger.info(f"DATABASE_URL: {DATABASE_URL}")
         try:
             pool = await asyncpg.create_pool(dsn=DATABASE_URL, max_size=max_connections)
-            logger.info("Database connection established")
+            logger.info("Database connection pool established")
         except Exception as e:
-            logger.error(f"Database connection error: {e}")
+            logger.error(f"Database connection pool error: {e}")
+            raise
     else:
         logger.info("Using existing database connection pool.")
 
     # Test database connection
-    async with pool.acquire() as conn:
-        await conn.execute("SELECT 1")
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute("SELECT 1")
+            logger.info("Database connection test successful")
+    except Exception as e:
+        logger.error(f"Database connection test error: {e}")
+        raise
 
 
 # Create a new user or update an existing one
