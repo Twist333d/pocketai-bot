@@ -1,25 +1,54 @@
 import asyncpg
 import os
+import logging
 
+# Setup logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+# global variable
+pool = None
 
 async def create_db_pool():
-    return await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
+    global pool
+    if pool is None:
+        pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
+        logger.info("Database connection established")
+    else:
+        logger.info("Using existing database connection pool.")
 
-
-# get user conversation
-async def get_user_conversation(pool, user_id):
+    # Test database connection
     async with pool.acquire() as conn:
-        row = await conn.fetchrow()
-        return row["conversation_state"] if row else None
+        await conn.execute('SELECT 1')
 
 
-# update user conversation
-async def save_user_conversation(pool, user_id):
+# Create a new user or update an existing one
+async def ensure_user_exists(user_data):
+    """
+    Creates a new user profile or updates an existing one
+    :param user_data:
+    :return:
+    """
+    schema = 'staging' if os.getenv('ENV') == 'dev' else 'public'
+    global pool
+
+    if not pool:  # Check if the pool has been initialized
+        await create_db_pool()
     async with pool.acquire() as conn:
-        await conn.execute(
-            """ 
-            INSERT INTO user_conversations (user_id, conversation_state) VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE SET conversation_state = $2""",
-            user_id,
-            state,
-        )
+        # check if user exists
+        user_exists = await conn.fetchval(f"SELECT EXISTS(SELECT 1 FROM {schema}.users WHERE telegram_id = $1)", user_data['id'])
+        if not user_exists:
+            # Create a new user with UUID generation
+            await conn.execute(f"""
+                  INSERT INTO {schema}.users (user_id, telegram_id, is_bot, first_name, username, language_code, is_premium)
+                      VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6)""",
+                               user_data['id'], user_data['is_bot'], user_data['first_name'], user_data['username'],
+                               user_data['language_code'], user_data['is_premium'])
+            print("User created with new UUID.")
+        else:
+            # Update existing user (if needed)
+            await conn.execute(f"""
+                  UPDATE {schema}.users SET first_name = $1, username = $2, language_code = $3, is_premium = $4 WHERE telegram_id = $5""",
+                               user_data['first_name'], user_data['username'], user_data['language_code'],
+                               user_data['is_premium'], user_data['id'])
+            print("User updated.")

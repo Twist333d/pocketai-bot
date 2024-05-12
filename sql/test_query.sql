@@ -1,2 +1,2 @@
 Select *
-from users
+from staging.users
