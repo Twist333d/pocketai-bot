@@ -22,13 +22,15 @@ logger.setLevel(logging.INFO)
 
 # global variable
 pool = None
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 
 async def create_db_pool():
     global pool
+    max_connections = 15
     if pool is None:
         try:
-            pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
+            pool = await asyncpg.create_pool(dsn=DATABASE_URL, max_size=max_connections)
             logger.info("Database connection established")
         except Exception as e:
             logger.error(f"Database connection error: {e}")
