@@ -1,6 +1,7 @@
 import asyncpg
 import os
 import logging
+from dotenv import load_dotenv
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -22,8 +23,11 @@ logger.setLevel(logging.INFO)
 
 # global variable
 pool = None
-DATABASE_URL = os.environ.get('DATABASE_URL')
 
+# load env variables
+load_dotenv()
+DATABASE_URL = os.environ.get("DATABASE_URL")
+#print(DATABASE_URL)
 
 async def create_db_pool():
     global pool

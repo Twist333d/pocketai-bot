@@ -13,8 +13,8 @@ ENV_VARIABLES = [
     "HEROKU_API",
     "HEROKU_EMAIL",
     "GITGUARDIAN_API_KEY",
+    "DATABASE_URL"
 ]
-
 
 def load_env_vars(env):
     if env == "dev":

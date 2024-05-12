@@ -10,6 +10,7 @@ from telegram.ext import ApplicationBuilder
 # Import functions to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 from ai_on_the_go.utils import escape_markdown, load_markdown_message
+from ai_on_the_go.db import create_db_pool
 
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -20,6 +21,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 async def application():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     await application.initialize()
+    # Start the db connection
+    # await create_db_pool()
+
     yield application
     await application.shutdown()
 
