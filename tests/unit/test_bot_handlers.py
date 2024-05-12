@@ -22,6 +22,7 @@ load_dotenv()
 # Setup logger
 logger = logging.getLogger(__name__)
 
+
 @pytest.fixture(scope="module")
 async def application():
     """Fixture to initialize and tear down the Telegram application."""
@@ -29,6 +30,7 @@ async def application():
     await app.initialize()
     yield app
     await app.shutdown()
+
 
 @pytest.mark.asyncio
 async def test_webhook_valid_request(application):
@@ -46,10 +48,12 @@ async def test_webhook_valid_request(application):
     request = AsyncMock()
     request.json.return_value = request_data
 
-    with patch("ai_on_the_go.bot.application", application), \
-         patch("ai_on_the_go.db.ensure_user_exists", AsyncMock(return_value=True)):
+    with patch("ai_on_the_go.bot.application", application), patch(
+        "ai_on_the_go.db.ensure_user_exists", AsyncMock(return_value=True)
+    ):
         response = await webhook_updates(request)
         assert response.status_code == 200
+
 
 @pytest.mark.asyncio
 async def test_start_command(mocker):
@@ -71,10 +75,11 @@ async def test_start_command(mocker):
 
     with patch("ai_on_the_go.utils.load_markdown_message", return_value="Welcome!"):
         await command_start(update, context)
-        text = escape_markdown("Welcome to *PocketGPT Bot 🤖*! Click on the *Menu* button to see a list of available options")
-        context.bot.send_message.assert_called_once_with(
-            chat_id=1, text=text, parse_mode="MarkdownV2"
+        text = escape_markdown(
+            "Welcome to *PocketGPT Bot 🤖*! Click on the *Menu* button to see a list of available options"
         )
+        context.bot.send_message.assert_called_once_with(chat_id=1, text=text, parse_mode="MarkdownV2")
+
 
 @pytest.mark.asyncio
 async def test_handle_message_success():
@@ -95,6 +100,7 @@ async def test_handle_message_success():
         context.bot.send_message.assert_called_once_with(
             chat_id=1, text=escape_markdown("Hello, human!"), parse_mode="MarkdownV2"
         )
+
 
 @pytest.mark.asyncio
 async def test_session_persistence():
