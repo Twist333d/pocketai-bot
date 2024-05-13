@@ -12,15 +12,24 @@ from collections import defaultdict
 # Import functions and components to be tested
 from ai_on_the_go.bot import command_start, handle_message, webhook_updates
 from ai_on_the_go.utils import escape_markdown
+from ai_on_the_go.basic_setup import load_env_vars
 
 # Set environment variables (ensure these are set for your test environment)
 os.environ["ENV"] = "dev"
 
-# Load environment variables
-load_dotenv()
-
-# Setup logger
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+# Load environment variables
+try:
+    load_dotenv()
+    logger.debug("Environment variables loaded")
+except FileNotFoundError:
+    logger.debug("Environment variables not loaded")
+#load_env_vars('dev')
+
 
 
 @pytest.fixture(scope="module")

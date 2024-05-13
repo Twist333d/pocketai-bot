@@ -32,11 +32,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 async def create_db_pool():
     global pool
-    max_connections = 15
+    # max_connections = 15
     if pool is None:
         logger.info(f"DATABASE_URL: {DATABASE_URL}")
         try:
-            pool = await asyncpg.create_pool(dsn=DATABASE_URL, max_size=max_connections)
+            pool = await asyncpg.create_pool(dsn=DATABASE_URL,)
             logger.info("Database connection pool established")
         except Exception as e:
             logger.error(f"Database connection pool error: {e}")
