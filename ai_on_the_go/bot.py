@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from ai_on_the_go.llm_integration import get_llm_response, setup_llm_conversation
 from ai_on_the_go.basic_setup import load_env_vars
 from ai_on_the_go.utils import escape_markdown, load_markdown_message
+from ai_on_the_go.db import create_db_pool, ensure_user_exists
 
 # General
 from collections import defaultdict
@@ -76,9 +77,13 @@ async def check_webhook():
 # Command handler for /start
 async def command_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_chat_id = update.effective_chat.id
-    logger.info("Start command received")
-
     logger.debug(f"Received /start command from user: {user_chat_id}")
+
+    # Create or update user profile
+    user_data = update.effective_user
+    await ensure_user_exists(user_data)
+
+    # Send a welcome message
     start_message = load_markdown_message("start_message.md")
     try:
         await context.bot.send_message(
@@ -172,6 +177,9 @@ async def startup():
         global application
         application = ApplicationBuilder().token(BOT_TOKEN).build()
         bot = application.bot
+
+        # Start the db connection
+        await create_db_pool()
 
         # Add handlers after initialization is confirmed
         application.add_handler(CommandHandler("start", command_start))

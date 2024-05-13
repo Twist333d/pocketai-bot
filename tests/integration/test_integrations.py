@@ -2,7 +2,12 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from ai_on_the_go.bot import app  # Ensure this import points to where your FastAPI app is defined
+from ai_on_the_go.basic_setup import load_env_vars
+from dotenv import load_dotenv
 
+#
+# load_env_vars('dev')
+load_dotenv()
 
 # Setup TestClient for FastAPI
 @pytest.fixture
